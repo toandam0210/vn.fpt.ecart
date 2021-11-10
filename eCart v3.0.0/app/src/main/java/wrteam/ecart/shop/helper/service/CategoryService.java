@@ -12,4 +12,7 @@ import wrteam.ecart.shop.model.Category;
 public interface CategoryService {
     @Query("SELECT * FROM Category")
     List<Category> getAll();
+
+    @Query("SELECT * FROM Category WHERE category_id = :cate_id")
+    List<Category> getCategoryById(Integer cate_id);
 }

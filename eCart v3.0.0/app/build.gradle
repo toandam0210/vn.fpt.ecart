@@ -109,6 +109,7 @@ dependencies {
 
     //sslCommerzSdk
     implementation(name: 'sslmodule', ext: 'aar')
+    implementation 'androidx.room:room-common:2.3.0'
 
     def room_version = "2.3.0"
     implementation "androidx.room:room-runtime:$room_version"

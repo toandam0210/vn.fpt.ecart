@@ -14,4 +14,10 @@ public interface ProductService {
 
     @Query("SELECT * FROM Product where category_id = :categoryId")
     List<Product> loadProduct(Integer categoryId);
+
+    @Query("SELECT * FROM Product where id = :product_id")
+    Product loadProductDetail(Integer product_id);
+
+    @Query("SELECT * FROM Product where id = :product_id AND is_favorite = :isFav")
+    List<Product> getFavoriteProduct(Integer product_id, boolean isFav);
 }

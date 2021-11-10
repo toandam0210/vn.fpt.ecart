@@ -484,7 +484,7 @@ public class ApiConfig extends Application {
         }
     }
 
-    public static void addMarkers(int currentPage, ArrayList<Slider> imageList, LinearLayout mMarkersLayout, Context context) {
+    public static void addMarkers(int currentPage, List<String> imageList, LinearLayout mMarkersLayout, Context context) {
 
         if (context != null) {
             TextView[] markers = new TextView[imageList.size()];

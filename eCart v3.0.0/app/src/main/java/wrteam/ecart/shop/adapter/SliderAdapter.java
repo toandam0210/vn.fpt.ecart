@@ -16,6 +16,7 @@ import androidx.viewpager.widget.PagerAdapter;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.activity.MainActivity;
@@ -27,12 +28,12 @@ import wrteam.ecart.shop.model.Slider;
 
 public class SliderAdapter extends PagerAdapter {
 
-    final ArrayList<Slider> dataList;
+    final List<String> dataList;
     final Activity activity;
     final int layout;
     final String from;
 
-    public SliderAdapter(ArrayList<Slider> dataList, Activity activity, int layout, String from) {
+    public SliderAdapter(List<String> dataList, Activity activity, int layout, String from) {
         this.dataList = dataList;
         this.activity = activity;
         this.layout = layout;
@@ -48,11 +49,11 @@ public class SliderAdapter extends PagerAdapter {
         ImageView imgSlider = imageLayout.findViewById(R.id.imgSlider);
         CardView lytMain = imageLayout.findViewById(R.id.lytMain);
 
-        final Slider singleItem = dataList.get(position);
+        final String singleItem = dataList.get(position);
 
 
         Picasso.get()
-                .load(singleItem.getImage())
+                .load(singleItem)
                 .fit()
                 .centerInside()
                 .placeholder(R.drawable.placeholder)
@@ -72,23 +73,20 @@ public class SliderAdapter extends PagerAdapter {
 
             } else {
 
-                if (singleItem.getType().equals("category")) {
+                if (singleItem.equals("category")) {
 
                     Fragment fragment = new SubCategoryFragment();
                     Bundle bundle = new Bundle();
-                    bundle.putInt(Constant.ID, singleItem.getType_id());
-                    bundle.putString(Constant.NAME, singleItem.getName());
                     bundle.putString(Constant.FROM, "category");
                     fragment.setArguments(bundle);
 
                     MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
 
 
-                } else if (singleItem.getType().equals("product")) {
+                } else if (singleItem.equals("product")) {
 
                     Fragment fragment = new ProductDetailFragment();
                     Bundle bundle = new Bundle();
-                    bundle.putInt(Constant.ID, singleItem.getType_id());
                     bundle.putString(Constant.FROM, "slider");
                     bundle.putInt("variantsPosition", 0);
                     fragment.setArguments(bundle);

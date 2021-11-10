@@ -63,13 +63,12 @@ import wrteam.ecart.shop.model.ProductInCategory;
 import wrteam.ecart.shop.model.Slider;
 
 
-
 public class HomeFragment extends Fragment {
 
     public static List<ProductInCategory> sectionList;
-    public  static  List<Category> categoryArrayList;
+    public static List<Category> categoryArrayList;
     public Session session;
-    ArrayList<Slider> sliderArrayList;
+    List<String> sliderArrayList;
     Activity activity;
     NestedScrollView nestedScrollView;
     SwipeRefreshLayout swipeLayout;
@@ -208,14 +207,14 @@ public class HomeFragment extends Fragment {
 
         categoryArrayList = new ArrayList<>();
 
-        swipeLayout.setColorSchemeColors(ContextCompat.getColor(activity,R.color.colorPrimary));
+        swipeLayout.setColorSchemeColors(ContextCompat.getColor(activity, R.color.colorPrimary));
 
         swipeLayout.setOnRefreshListener(() -> {
             if (swipeTimer != null) {
                 swipeTimer.cancel();
             }
             if (ApiConfig.isConnected(getActivity())) {
-                    ApiConfig.getWalletBalance(activity, new Session(activity));
+                ApiConfig.getWalletBalance(activity, new Session(activity));
                 GetHomeData(db);
             }
             swipeLayout.setRefreshing(false);
@@ -244,13 +243,13 @@ public class HomeFragment extends Fragment {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    GetOfferImage(jsonObject.getJSONArray(Constant.OFFER_IMAGES));
-                        GetFlashSale(db);
-                        GetCategory(db);
-                        SectionProductRequest(db);
-                        GetSlider(db);
-                } catch (JSONException e) {
+                    //SONObject jsonObject = new JSONObject(response);
+                    //GetOfferImage(jsonObject.getJSONArray(Constant.OFFER_IMAGES));
+                    GetFlashSale(db);
+                    GetCategory(db);
+                    SectionProductRequest(db);
+                    GetSlider(db);
+                } catch (Exception e) {
                     nestedScrollView.setVisibility(View.VISIBLE);
                     mShimmerViewContainer.setVisibility(View.GONE);
                     mShimmerViewContainer.stopShimmer();
@@ -262,34 +261,34 @@ public class HomeFragment extends Fragment {
 
     @SuppressWarnings("deprecation")
     public void GetFlashSale(AppDatabase db) {
-            tabLayout.removeAllTabs();
-            SliderService sliderService = db.sliderService();
-            List<Slider> sliderList = sliderService.getAll();
-            for (int i = 0; i < sliderList.size(); i++) {
-                tabLayout.addTab(tabLayout.newTab().setText(sliderList.get(i).getName()));
+        tabLayout.removeAllTabs();
+        SliderService sliderService = db.sliderService();
+        List<Slider> sliderList = sliderService.getAll();
+        for (int i = 0; i < sliderList.size(); i++) {
+            tabLayout.addTab(tabLayout.newTab().setText(sliderList.get(i).getName()));
+        }
+
+        TabAdapter tabAdapter = new TabAdapter(MainActivity.fm, tabLayout.getTabCount(), sliderList);
+        viewPager.setAdapter(tabAdapter);
+        viewPager.setOffscreenPageLimit(1);
+        viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+
+        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                viewPager.setCurrentItem(tab.getPosition());
             }
 
-            TabAdapter tabAdapter = new TabAdapter(MainActivity.fm, tabLayout.getTabCount(), sliderList);
-            viewPager.setAdapter(tabAdapter);
-            viewPager.setOffscreenPageLimit(1);
-            viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
 
-            tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-                @Override
-                public void onTabSelected(TabLayout.Tab tab) {
-                    viewPager.setCurrentItem(tab.getPosition());
-                }
+            }
 
-                @Override
-                public void onTabUnselected(TabLayout.Tab tab) {
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
 
-                }
-
-                @Override
-                public void onTabReselected(TabLayout.Tab tab) {
-
-                }
-            });
+            }
+        });
 
 //            tabLayout.setupWithViewPager(viewPager);
 
@@ -316,8 +315,7 @@ public class HomeFragment extends Fragment {
         categoryArrayList = categoryService.getAll();
         categoryRecyclerView.setLayoutManager(new GridLayoutManager(activity, 2));
         categoryRecyclerView.setAdapter(new CategoryAdapter(activity, categoryArrayList, R.layout.lyt_category_grid, "home", categoryArrayList.size()));
-            }
-
+    }
 
 
     public void SectionProductRequest(AppDatabase db) {  //json request for product search
@@ -348,34 +346,34 @@ public class HomeFragment extends Fragment {
     void GetSlider(AppDatabase db) {
         SliderService sliderService = db.sliderService();
         List<Slider> sliderList = sliderService.getAll();
-            size = sliderList.size();
-            for (Slider slider: sliderList) {
-                Slider slider1 = new Slider();
-                slider1.setImage(slider.getImage());
-                slider1.setType(slider.getType());
-                slider1.setType_id(slider.getType_id());
-                slider1.setName(slider.getName());
+        size = sliderList.size();
+        for (Slider slider : sliderList) {
+            Slider slider1 = new Slider();
+            slider1.setImage(slider.getImage());
+            slider1.setType(slider.getType());
+            slider1.setType_id(slider.getType_id());
+            slider1.setName(slider.getName());
+        }
+        mPager.setAdapter(new SliderAdapter(sliderArrayList, getActivity(), R.layout.lyt_slider, "home"));
+        ApiConfig.addMarkers(0, sliderArrayList, mMarkersLayout, activity);
+        handler = new Handler();
+        Update = () -> {
+            if (currentPage == size) {
+                currentPage = 0;
             }
-            mPager.setAdapter(new SliderAdapter(sliderArrayList, getActivity(), R.layout.lyt_slider, "home"));
-            ApiConfig.addMarkers(0, sliderArrayList, mMarkersLayout, activity);
-            handler = new Handler();
-            Update = () -> {
-                if (currentPage == size) {
-                    currentPage = 0;
-                }
-                try {
-                    mPager.setCurrentItem(currentPage++, true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            };
-            swipeTimer = new Timer();
-            swipeTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    handler.post(Update);
-                }
-            }, timerDelay, timerWaiting);
+            try {
+                mPager.setCurrentItem(currentPage++, true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        swipeTimer = new Timer();
+        swipeTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(Update);
+            }
+        }, timerDelay, timerWaiting);
 
 
         nestedScrollView.setVisibility(View.VISIBLE);
@@ -428,7 +426,7 @@ public class HomeFragment extends Fragment {
         @Override
         public Fragment getItem(int position) {
             Fragment fragment = null;
-                fragment = FlashSaleFragment.AddFragment(sliderList.get(position));
+            fragment = FlashSaleFragment.AddFragment(sliderList.get(position));
 
             assert fragment != null;
             return fragment;

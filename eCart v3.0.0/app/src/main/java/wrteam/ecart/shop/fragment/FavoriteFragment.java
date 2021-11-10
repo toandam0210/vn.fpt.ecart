@@ -33,20 +33,25 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.adapter.ProductLoadMoreAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.DatabaseHelper;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.ProductService;
 import wrteam.ecart.shop.model.Product;
+import wrteam.ecart.shop.model.VariantsInProduct;
 
 
 @SuppressLint("NotifyDataSetChanged")
 public class FavoriteFragment extends Fragment {
-    public static ArrayList<Product> productArrayList;
+    public static ArrayList<VariantsInProduct> productArrayList;
+    public static ArrayList<Product> productFav;
     @SuppressLint("StaticFieldLeak")
     public static ProductLoadMoreAdapter productLoadMoreAdapter;
     public static RecyclerView recyclerView;
@@ -67,6 +72,7 @@ public class FavoriteFragment extends Fragment {
     int resource;
     private ShimmerFrameLayout mShimmerViewContainer;
     String url;
+    AppDatabase db;
 
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -87,6 +93,7 @@ public class FavoriteFragment extends Fragment {
         nestedScrollView = root.findViewById(R.id.nestedScrollView);
         recyclerView = root.findViewById(R.id.recyclerView);
         mShimmerViewContainer = root.findViewById(R.id.mShimmerViewContainer);
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
 
         if (isLogin) {
             url = Constant.GET_FAVORITES_URL;
@@ -151,95 +158,85 @@ public class FavoriteFragment extends Fragment {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    if (!jsonObject.getBoolean(Constant.ERROR)) {
-                        if (isLogin) {
-                            total = Integer.parseInt(jsonObject.getString(Constant.TOTAL));
-                        }
-                        if (offset == 0) {
-                            productArrayList = new ArrayList<>();
-                            recyclerView.setVisibility(View.VISIBLE);
-                            tvAlert.setVisibility(View.GONE);
-                        }
-                        JSONObject object = new JSONObject(response);
-                        JSONArray jsonArray = object.getJSONArray(Constant.DATA);
-                        productArrayList.addAll(ApiConfig.GetFavoriteProductList(jsonArray));
-                        if (offset == 0) {
-                            productLoadMoreAdapter = new ProductLoadMoreAdapter(activity, productArrayList, resource, "favorite");
-                            recyclerView.setAdapter(productLoadMoreAdapter);
-                            mShimmerViewContainer.stopShimmer();
-                            mShimmerViewContainer.setVisibility(View.GONE);
-                            recyclerView.setVisibility(View.VISIBLE);
-                            nestedScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                    if (offset == 0) {
+                        productFav = new ArrayList<>();
+                        recyclerView.setVisibility(View.VISIBLE);
+                        tvAlert.setVisibility(View.GONE);
+                    }
+                    ProductService productService = db.productService();
+                    for (VariantsInProduct variants : productArrayList) {
+                        Product product = variants.getProduct();
+                        List<Product> favPro = productService.getFavoriteProduct(product.getId(), true);
+                        productFav.addAll(favPro);
 
-                                // if (diff == 0) {
-                                if (scrollY == (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight())) {
-                                    LinearLayoutManager linearLayoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                                    if (productArrayList.size() < total) {
-                                        if (!isLoadMore) {
-                                            if (linearLayoutManager != null && linearLayoutManager.findLastCompletelyVisibleItemPosition() == productArrayList.size() - 1) {
-                                                //bottom of list!
-                                                productArrayList.add(null);
-                                                productLoadMoreAdapter.notifyItemInserted(productArrayList.size() - 1);
-
-                                                offset = offset + Constant.LOAD_ITEM_LIMIT;
-                                                Map<String, String> params1 = new HashMap<>();
-                                                if (isLogin) {
-                                                    params1.put(Constant.GET_FAVORITES, Constant.GetVal);
-                                                    params1.put(Constant.USER_ID, session.getData(Constant.ID));
-                                                    params1.put(Constant.LIMIT, "" + Constant.LOAD_ITEM_LIMIT);
-                                                    params1.put(Constant.OFFSET, offset + "");
-                                                } else {
-                                                    params1.put(Constant.GET_FAVORITES_OFFLINE, Constant.GetVal);
-                                                    params1.put(Constant.PRODUCT_IDs, String.valueOf(databaseHelper.getFavorite()).replace("[", "").replace("]", ""));
-                                                }
-
-                                                ApiConfig.RequestToVolley((result1, response1) -> {
-                                                    productArrayList.remove(productArrayList.size() - 1);
-                                                    productLoadMoreAdapter.notifyItemRemoved(productArrayList.size());
-
-                                                    if (result1) {
-                                                        try {
-                                                            JSONObject jsonObject1 = new JSONObject(response1);
-                                                            if (!jsonObject1.getBoolean(Constant.ERROR)) {
-
-                                                                JSONObject object1 = new JSONObject(response1);
-                                                                JSONArray jsonArray1 = object1.getJSONArray(Constant.DATA);
-                                                                productArrayList.addAll(ApiConfig.GetFavoriteProductList(jsonArray1));
-                                                                productLoadMoreAdapter.notifyDataSetChanged();
-                                                                isLoadMore = false;
-                                                            }
-                                                        } catch (JSONException e) {
-                                                            mShimmerViewContainer.stopShimmer();
-                                                            mShimmerViewContainer.setVisibility(View.GONE);
-                                                            recyclerView.setVisibility(View.VISIBLE);
-                                                        }
-                                                    } else {
-                                                        isLoadMore = false;
-                                                        productLoadMoreAdapter.notifyDataSetChanged();
-                                                        mShimmerViewContainer.stopShimmer();
-                                                        mShimmerViewContainer.setVisibility(View.GONE);
-                                                        recyclerView.setVisibility(View.VISIBLE);
-                                                        recyclerView.setVisibility(View.GONE);
-                                                        tvAlert.setVisibility(View.VISIBLE);
-                                                    }
-                                                }, activity, url, params1, false);
-                                                isLoadMore = true;
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    } else {
+                    }
+                    if (offset == 0) {
+                        productLoadMoreAdapter = new ProductLoadMoreAdapter(activity, productArrayList, resource, "favorite");
+                        recyclerView.setAdapter(productLoadMoreAdapter);
                         mShimmerViewContainer.stopShimmer();
                         mShimmerViewContainer.setVisibility(View.GONE);
                         recyclerView.setVisibility(View.VISIBLE);
-                        recyclerView.setVisibility(View.GONE);
-                        tvAlert.setVisibility(View.VISIBLE);
+                        nestedScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
 
+                            // if (diff == 0) {
+                            if (scrollY == (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight())) {
+                                LinearLayoutManager linearLayoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                                if (productArrayList.size() < total) {
+                                    if (!isLoadMore) {
+                                        if (linearLayoutManager != null && linearLayoutManager.findLastCompletelyVisibleItemPosition() == productArrayList.size() - 1) {
+                                            //bottom of list!
+                                            productArrayList.add(null);
+                                            productLoadMoreAdapter.notifyItemInserted(productArrayList.size() - 1);
+
+                                            offset = offset + Constant.LOAD_ITEM_LIMIT;
+                                            Map<String, String> params1 = new HashMap<>();
+                                            if (isLogin) {
+                                                params1.put(Constant.GET_FAVORITES, Constant.GetVal);
+                                                params1.put(Constant.USER_ID, session.getData(Constant.ID));
+                                                params1.put(Constant.LIMIT, "" + Constant.LOAD_ITEM_LIMIT);
+                                                params1.put(Constant.OFFSET, offset + "");
+                                            } else {
+                                                params1.put(Constant.GET_FAVORITES_OFFLINE, Constant.GetVal);
+                                                params1.put(Constant.PRODUCT_IDs, String.valueOf(databaseHelper.getFavorite()).replace("[", "").replace("]", ""));
+                                            }
+
+                                            ApiConfig.RequestToVolley((result1, response1) -> {
+                                                productArrayList.remove(productArrayList.size() - 1);
+                                                productLoadMoreAdapter.notifyItemRemoved(productArrayList.size());
+
+                                                if (result1) {
+                                                    try {
+                                                        for (VariantsInProduct variants : productArrayList) {
+                                                            Product product = variants.getProduct();
+                                                            List<Product> favPro = productService.getFavoriteProduct(product.getId(), true);
+                                                            productFav.addAll(favPro);
+                                                        }
+                                                        productLoadMoreAdapter.notifyDataSetChanged();
+                                                        isLoadMore = false;
+
+                                                    } catch (Exception e) {
+                                                        mShimmerViewContainer.stopShimmer();
+                                                        mShimmerViewContainer.setVisibility(View.GONE);
+                                                        recyclerView.setVisibility(View.VISIBLE);
+                                                    }
+                                                } else {
+                                                    isLoadMore = false;
+                                                    productLoadMoreAdapter.notifyDataSetChanged();
+                                                    mShimmerViewContainer.stopShimmer();
+                                                    mShimmerViewContainer.setVisibility(View.GONE);
+                                                    recyclerView.setVisibility(View.VISIBLE);
+                                                    recyclerView.setVisibility(View.GONE);
+                                                    tvAlert.setVisibility(View.VISIBLE);
+                                                }
+                                            }, activity, url, params1, false);
+                                            isLoadMore = true;
+                                        }
+                                    }
+                                }
+                            }
+                        });
                     }
-                } catch (JSONException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     mShimmerViewContainer.stopShimmer();
                     mShimmerViewContainer.setVisibility(View.GONE);
