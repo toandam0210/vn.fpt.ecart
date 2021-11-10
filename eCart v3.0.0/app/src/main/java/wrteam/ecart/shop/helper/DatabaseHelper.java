@@ -87,10 +87,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
     /*      FAVORITE TABLE OPERATION      */
-    public boolean getFavoriteById(String pid) {
+    public boolean getFavoriteById(Integer pid) {
         boolean count = false;
         SQLiteDatabase db = this.getWritableDatabase();
-        String[] args = new String[]{pid};
+        String[] args = new String[]{String.valueOf(pid)};
         Cursor cursor = db.rawQuery("SELECT " + KEY_ID + " FROM " + TABLE_FAVORITE_NAME + " WHERE " + KEY_ID + "=? ", args);
         if (cursor.moveToFirst()) {
             count = true;
@@ -100,7 +100,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return count;
     }
 
-    public void AddOrRemoveFavorite(String id, boolean isAdd) {
+    public void AddOrRemoveFavorite(Integer id, boolean isAdd) {
         SQLiteDatabase db = this.getWritableDatabase();
         if (isAdd) {
             addFavorite(id);
@@ -110,7 +110,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public void addFavorite(String id) {
+    public void addFavorite(Integer id) {
         ContentValues fav = new ContentValues();
         fav.put(DatabaseHelper.KEY_ID, id);
         SQLiteDatabase db = this.getWritableDatabase();

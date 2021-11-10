@@ -30,8 +30,10 @@ import java.util.Map;
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.adapter.TrackerAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.OrderTrackerService;
 import wrteam.ecart.shop.model.OrderTracker;
 
 
@@ -48,10 +50,12 @@ public class OrderListCancelledFragment extends Fragment {
     private int total = 0;
     private NestedScrollView scrollView;
     private ShimmerFrameLayout mShimmerViewContainer;
+    AppDatabase db;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         root = inflater.inflate(R.layout.fragment_order_list, container, false);
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
 
         activity = getActivity();
         session = new Session(activity);
@@ -91,13 +95,9 @@ public class OrderListCancelledFragment extends Fragment {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    if (!jsonObject.getBoolean(Constant.ERROR)) {
-                        total = Integer.parseInt(jsonObject.getString(Constant.TOTAL));
-                        session.setData(Constant.TOTAL, String.valueOf(total));
 
-                        JSONObject object = new JSONObject(response);
-                        orderTrackerArrayList.addAll(ApiConfig.GetOrders(object.getJSONArray(Constant.DATA)));
+                        OrderTrackerService orderTrackerService = db.orderTrackerService();
+                        orderTrackerArrayList.addAll(orderTrackerService.getAll());
                         if (offset == 0) {
                             trackerAdapter = new TrackerAdapter(activity, activity, orderTrackerArrayList);
                             recyclerView.setAdapter(trackerAdapter);
@@ -133,21 +133,16 @@ public class OrderListCancelledFragment extends Fragment {
 
                                                         if (result1) {
                                                             try {
-                                                                // System.out.println("====product  " + response);
-                                                                JSONObject jsonObject1 = new JSONObject(response1);
-                                                                if (!jsonObject1.getBoolean(Constant.ERROR)) {
-
-                                                                    session.setData(Constant.TOTAL, jsonObject1.getString(Constant.TOTAL));
 
                                                                     orderTrackerArrayList.remove(orderTrackerArrayList.size() - 1);
                                                                     trackerAdapter.notifyItemRemoved(orderTrackerArrayList.size());
 
-                                                                    JSONObject object1 = new JSONObject(response1);
-                                                                    orderTrackerArrayList.addAll(ApiConfig.GetOrders(object1.getJSONArray(Constant.DATA)));
+                                                                OrderTrackerService orderTrackerService = db.orderTrackerService();
+                                                                orderTrackerArrayList.addAll(orderTrackerService.getAll());
                                                                     trackerAdapter.notifyDataSetChanged();
                                                                     isLoadMore = false;
-                                                                }
-                                                            } catch (JSONException e) {
+
+                                                            } catch (Exception e) {
                                                                 mShimmerViewContainer.stopShimmer();
                                                                 mShimmerViewContainer.setVisibility(View.GONE);
                                                                 recyclerView.setVisibility(View.VISIBLE);
@@ -163,14 +158,8 @@ public class OrderListCancelledFragment extends Fragment {
                                 }
                             });
                         }
-                    } else {
-                        recyclerView.setVisibility(View.GONE);
-                        tvNoData.setVisibility(View.VISIBLE);
-                        mShimmerViewContainer.stopShimmer();
-                        mShimmerViewContainer.setVisibility(View.GONE);
-                        recyclerView.setVisibility(View.VISIBLE);
-                    }
-                } catch (JSONException e) {
+
+                } catch (Exception e) {
                     mShimmerViewContainer.stopShimmer();
                     mShimmerViewContainer.setVisibility(View.GONE);
                     recyclerView.setVisibility(View.VISIBLE);

@@ -1,28 +1,42 @@
 package wrteam.ecart.shop.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 
+@Entity
 public class Variants implements Serializable {
-
-    String id;
+    @PrimaryKey(autoGenerate = true)
+    Integer id;
+    @ColumnInfo
     String product_id;
+    @ColumnInfo
     String type;
+    @ColumnInfo
     String measurement;
+    @ColumnInfo
     String price;
+    @ColumnInfo
     String discounted_price;
+    @ColumnInfo
     String serve_for;
+    @ColumnInfo
     String stock;
+    @ColumnInfo
     String measurement_unit_name;
+    @ColumnInfo
     String cart_count;
+    @ColumnInfo
     String is_flash_sales;
-    ArrayList<FlashSale> flash_sales;
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -86,7 +100,4 @@ public class Variants implements Serializable {
         this.is_flash_sales = is_flash_sales;
     }
 
-    public ArrayList<FlashSale>  getFlash_sales() {
-        return flash_sales;
-    }
 }

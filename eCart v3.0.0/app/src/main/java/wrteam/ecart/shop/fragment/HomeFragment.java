@@ -31,6 +31,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.facebook.shimmer.ShimmerFrameLayout;
 import com.google.android.material.tabs.TabLayout;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,6 +39,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -49,18 +51,24 @@ import wrteam.ecart.shop.adapter.OfferAdapter;
 import wrteam.ecart.shop.adapter.SectionAdapter;
 import wrteam.ecart.shop.adapter.SliderAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.CategoryService;
+import wrteam.ecart.shop.helper.service.ProductService;
+import wrteam.ecart.shop.helper.service.SliderService;
 import wrteam.ecart.shop.model.Category;
+import wrteam.ecart.shop.model.Product;
+import wrteam.ecart.shop.model.ProductInCategory;
 import wrteam.ecart.shop.model.Slider;
-
 
 
 public class HomeFragment extends Fragment {
 
-    public static ArrayList<Category> categoryArrayList, sectionList;
+    public static List<ProductInCategory> sectionList;
+    public static List<Category> categoryArrayList;
     public Session session;
-    ArrayList<Slider> sliderArrayList;
+    List<String> sliderArrayList;
     Activity activity;
     NestedScrollView nestedScrollView;
     SwipeRefreshLayout swipeLayout;
@@ -81,6 +89,7 @@ public class HomeFragment extends Fragment {
     TextView tvMore, tvMoreFlashSale;
     boolean searchVisible = false;
     private ShimmerFrameLayout mShimmerViewContainer;
+    AppDatabase db;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -119,6 +128,8 @@ public class HomeFragment extends Fragment {
         mShimmerViewContainer = root.findViewById(R.id.mShimmerViewContainer);
 
         searchView = root.findViewById(R.id.searchView);
+
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
 
         if (nestedScrollView != null) {
             nestedScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
@@ -196,22 +207,22 @@ public class HomeFragment extends Fragment {
 
         categoryArrayList = new ArrayList<>();
 
-        swipeLayout.setColorSchemeColors(ContextCompat.getColor(activity,R.color.colorPrimary));
+        swipeLayout.setColorSchemeColors(ContextCompat.getColor(activity, R.color.colorPrimary));
 
         swipeLayout.setOnRefreshListener(() -> {
             if (swipeTimer != null) {
                 swipeTimer.cancel();
             }
             if (ApiConfig.isConnected(getActivity())) {
-                    ApiConfig.getWalletBalance(activity, new Session(activity));
-                GetHomeData();
+                ApiConfig.getWalletBalance(activity, new Session(activity));
+                GetHomeData(db);
             }
             swipeLayout.setRefreshing(false);
         });
 
         if (ApiConfig.isConnected(getActivity())) {
             ApiConfig.getWalletBalance(activity, new Session(activity));
-            GetHomeData();
+            GetHomeData(db);
         } else {
             nestedScrollView.setVisibility(View.VISIBLE);
             mShimmerViewContainer.setVisibility(View.GONE);
@@ -221,7 +232,7 @@ public class HomeFragment extends Fragment {
         return root;
     }
 
-    public void GetHomeData() {
+    public void GetHomeData(AppDatabase db) {
         nestedScrollView.setVisibility(View.GONE);
         mShimmerViewContainer.setVisibility(View.VISIBLE);
         mShimmerViewContainer.startShimmer();
@@ -232,19 +243,13 @@ public class HomeFragment extends Fragment {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    if (!jsonObject.getBoolean(Constant.ERROR)) {
-                        GetOfferImage(jsonObject.getJSONArray(Constant.OFFER_IMAGES));
-                        GetFlashSale(jsonObject.getJSONArray(Constant.FLASH_SALES));
-                        GetCategory(jsonObject);
-                        SectionProductRequest(jsonObject.getJSONArray(Constant.SECTIONS));
-                        GetSlider(jsonObject.getJSONArray(Constant.SLIDER_IMAGES));
-                    } else {
-                        nestedScrollView.setVisibility(View.VISIBLE);
-                        mShimmerViewContainer.setVisibility(View.GONE);
-                        mShimmerViewContainer.stopShimmer();
-                    }
-                } catch (JSONException e) {
+                    //SONObject jsonObject = new JSONObject(response);
+                    //GetOfferImage(jsonObject.getJSONArray(Constant.OFFER_IMAGES));
+                    GetFlashSale(db);
+                    GetCategory(db);
+                    SectionProductRequest(db);
+                    GetSlider(db);
+                } catch (Exception e) {
                     nestedScrollView.setVisibility(View.VISIBLE);
                     mShimmerViewContainer.setVisibility(View.GONE);
                     mShimmerViewContainer.stopShimmer();
@@ -255,40 +260,38 @@ public class HomeFragment extends Fragment {
     }
 
     @SuppressWarnings("deprecation")
-    public void GetFlashSale(JSONArray jsonArray) {
-        try {
-            tabLayout.removeAllTabs();
+    public void GetFlashSale(AppDatabase db) {
+        tabLayout.removeAllTabs();
+        SliderService sliderService = db.sliderService();
+        List<Slider> sliderList = sliderService.getAll();
+        for (int i = 0; i < sliderList.size(); i++) {
+            tabLayout.addTab(tabLayout.newTab().setText(sliderList.get(i).getName()));
+        }
 
-            for (int i = 0; i < jsonArray.length(); i++) {
-                tabLayout.addTab(tabLayout.newTab().setText(jsonArray.getJSONObject(i).getString(Constant.TITLE)));
+        TabAdapter tabAdapter = new TabAdapter(MainActivity.fm, tabLayout.getTabCount(), sliderList);
+        viewPager.setAdapter(tabAdapter);
+        viewPager.setOffscreenPageLimit(1);
+        viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+
+        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                viewPager.setCurrentItem(tab.getPosition());
             }
 
-            TabAdapter tabAdapter = new TabAdapter(MainActivity.fm, tabLayout.getTabCount(), jsonArray);
-            viewPager.setAdapter(tabAdapter);
-            viewPager.setOffscreenPageLimit(1);
-            viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
 
-            tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-                @Override
-                public void onTabSelected(TabLayout.Tab tab) {
-                    viewPager.setCurrentItem(tab.getPosition());
-                }
+            }
 
-                @Override
-                public void onTabUnselected(TabLayout.Tab tab) {
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
 
-                }
-
-                @Override
-                public void onTabReselected(TabLayout.Tab tab) {
-
-                }
-            });
+            }
+        });
 
 //            tabLayout.setupWithViewPager(viewPager);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+
     }
 
     public void GetOfferImage(JSONArray jsonArray) {
@@ -306,98 +309,73 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    void GetCategory(JSONObject object) {
+    void GetCategory(AppDatabase db) {
         categoryArrayList = new ArrayList<>();
-        try {
-            int visible_count;
-            int column_count;
-            JSONArray jsonArray = object.getJSONArray(Constant.CATEGORIES);
-            if (jsonArray.length() > 0) {
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    Category category = new Gson().fromJson(jsonObject.toString(), Category.class);
-                    categoryArrayList.add(category);
-                }
-
-                if (!object.getString("style").equals("")) {
-                    if (object.getString("style").equals("style_1")) {
-                        visible_count = Integer.parseInt(object.getString("visible_count"));
-                        column_count = Integer.parseInt(object.getString("column_count"));
-                        categoryRecyclerView.setLayoutManager(new GridLayoutManager(activity, column_count));
-                        categoryRecyclerView.setAdapter(new CategoryAdapter(activity, categoryArrayList, R.layout.lyt_category_grid, "home", visible_count));
-                    } else if (object.getString("style").equals("style_2")) {
-                        visible_count = Integer.parseInt(object.getString("visible_count"));
-                        categoryRecyclerView.setLayoutManager(new LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false));
-                        categoryRecyclerView.setAdapter(new CategoryAdapter(activity, categoryArrayList, R.layout.lyt_category_list, "home", visible_count));
-                    }
-                } else {
-                    categoryRecyclerView.setLayoutManager(new LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false));
-                    categoryRecyclerView.setAdapter(new CategoryAdapter(activity, categoryArrayList, R.layout.lyt_category_list, "home", 6));
-                }
-            } else {
-                lytCategory.setVisibility(View.GONE);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        CategoryService categoryService = db.categoryService();
+        categoryArrayList = categoryService.getAll();
+        categoryRecyclerView.setLayoutManager(new GridLayoutManager(activity, 2));
+        categoryRecyclerView.setAdapter(new CategoryAdapter(activity, categoryArrayList, R.layout.lyt_category_grid, "home", categoryArrayList.size()));
     }
 
-    public void SectionProductRequest(JSONArray jsonArray) {  //json request for product search
+
+    public void SectionProductRequest(AppDatabase db) {  //json request for product search
         sectionList = new ArrayList<>();
-        try {
-            for (int j = 0; j < jsonArray.length(); j++) {
+        CategoryService categoryService = db.categoryService();
+        List<Category> categoryList = categoryService.getAll();
+        if (categoryList.size() > 0) {
+            for (Category category : categoryList) {
                 Category section = new Category();
-                JSONObject jsonObject = jsonArray.getJSONObject(j);
-                section.setName(jsonObject.getString(Constant.TITLE));
-                section.setId(jsonObject.getString(Constant.ID));
-                section.setStyle(jsonObject.getString(Constant.SECTION_STYLE));
-                section.setSubtitle(jsonObject.getString(Constant.SHORT_DESC));
-                JSONArray productArray = jsonObject.getJSONArray(Constant.PRODUCTS);
-                section.setProductList(ApiConfig.GetProductList(productArray));
-                sectionList.add(section);
+                ProductService productService = db.productService();
+                List<Product> productList = productService.loadProduct(category.getId());
+                section.setName(category.getName());
+                section.setId(category.getId());
+                section.setStyle(category.getStyle());
+                section.setSubtitle(category.getSubtitle());
+                ProductInCategory productInCategory = new ProductInCategory(section, productList);
+                //section.setProductList(ApiConfig.GetProductList(db));
+                sectionList.add(productInCategory);
             }
+
             sectionView.setVisibility(View.VISIBLE);
             SectionAdapter sectionAdapter = new SectionAdapter(activity, getActivity(), sectionList);
             sectionView.setAdapter(sectionAdapter);
 
-        } catch (JSONException e) {
-            e.printStackTrace();
         }
-
     }
 
-    void GetSlider(JSONArray jsonArray) {
-        sliderArrayList = new ArrayList<>();
-        try {
-            size = jsonArray.length();
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                sliderArrayList.add(new Slider(jsonObject.getString(Constant.TYPE), jsonObject.getString(Constant.TYPE_ID), jsonObject.getString(Constant.NAME), jsonObject.getString(Constant.IMAGE)));
-            }
-            mPager.setAdapter(new SliderAdapter(sliderArrayList, getActivity(), R.layout.lyt_slider, "home"));
-            ApiConfig.addMarkers(0, sliderArrayList, mMarkersLayout, activity);
-            handler = new Handler();
-            Update = () -> {
-                if (currentPage == size) {
-                    currentPage = 0;
-                }
-                try {
-                    mPager.setCurrentItem(currentPage++, true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            };
-            swipeTimer = new Timer();
-            swipeTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    handler.post(Update);
-                }
-            }, timerDelay, timerWaiting);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
+    void GetSlider(AppDatabase db) {
+        SliderService sliderService = db.sliderService();
+        List<Slider> sliderList = sliderService.getAll();
+        size = sliderList.size();
+        for (Slider slider : sliderList) {
+            Slider slider1 = new Slider();
+            slider1.setImage(slider.getImage());
+            slider1.setType(slider.getType());
+            slider1.setType_id(slider.getType_id());
+            slider1.setName(slider.getName());
         }
+        mPager.setAdapter(new SliderAdapter(sliderArrayList, getActivity(), R.layout.lyt_slider, "home"));
+        ApiConfig.addMarkers(0, sliderArrayList, mMarkersLayout, activity);
+        handler = new Handler();
+        Update = () -> {
+            if (currentPage == size) {
+                currentPage = 0;
+            }
+            try {
+                mPager.setCurrentItem(currentPage++, true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        swipeTimer = new Timer();
+        swipeTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(Update);
+            }
+        }, timerDelay, timerWaiting);
+
+
         nestedScrollView.setVisibility(View.VISIBLE);
         mShimmerViewContainer.setVisibility(View.GONE);
         mShimmerViewContainer.stopShimmer();
@@ -435,24 +413,21 @@ public class HomeFragment extends Fragment {
     public static class TabAdapter extends FragmentStatePagerAdapter {
 
         final int mNumOfTabs;
-        final JSONArray jsonArray;
+        final List<Slider> sliderList;
 
         @SuppressWarnings("deprecation")
-        public TabAdapter(FragmentManager fm, int NumOfTabs, JSONArray jsonArray) {
+        public TabAdapter(FragmentManager fm, int NumOfTabs, List<Slider> sliderList) {
             super(fm);
             this.mNumOfTabs = NumOfTabs;
-            this.jsonArray = jsonArray;
+            this.sliderList = sliderList;
         }
 
         @NonNull
         @Override
         public Fragment getItem(int position) {
             Fragment fragment = null;
-            try {
-                fragment = FlashSaleFragment.AddFragment(jsonArray.getJSONObject(position));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            fragment = FlashSaleFragment.AddFragment(sliderList.get(position));
+
             assert fragment != null;
             return fragment;
         }

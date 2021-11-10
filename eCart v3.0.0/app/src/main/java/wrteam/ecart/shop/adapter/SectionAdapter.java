@@ -16,20 +16,23 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.activity.MainActivity;
 import wrteam.ecart.shop.fragment.ProductListFragment;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.model.Category;
+import wrteam.ecart.shop.model.Product;
+import wrteam.ecart.shop.model.ProductInCategory;
 
 public class SectionAdapter extends RecyclerView.Adapter<SectionAdapter.SectionHolder> {
 
-    public final ArrayList<Category> sectionList;
+    public final List<ProductInCategory> sectionList;
     public final Activity activity;
     final Context context;
 
-    public SectionAdapter(Context context, Activity activity, ArrayList<Category> sectionList) {
+    public SectionAdapter(Context context, Activity activity, List<ProductInCategory> sectionList) {
         this.context = context;
         this.activity = activity;
         this.sectionList = sectionList;
@@ -42,12 +45,12 @@ public class SectionAdapter extends RecyclerView.Adapter<SectionAdapter.SectionH
 
     @Override
     public void onBindViewHolder(SectionHolder holder1, final int position) {
-        final Category section;
+        final ProductInCategory section;
         section = sectionList.get(position);
-        holder1.tvTitle.setText(section.getName());
-        holder1.tvSubTitle.setText(section.getSubtitle());
+        holder1.tvTitle.setText(section.getCategory().getName());
+        holder1.tvSubTitle.setText(section.getCategory().getSubtitle());
 
-        switch (section.getStyle()) {
+        switch (section.getCategory().getStyle()) {
             case "style_1":
                 holder1.recyclerView.setLayoutManager(new LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false));
                 AdapterStyle1 adapter = new AdapterStyle1(context, activity, section.getProductList(), R.layout.offer_layout);
@@ -70,8 +73,8 @@ public class SectionAdapter extends RecyclerView.Adapter<SectionAdapter.SectionH
             Fragment fragment = new ProductListFragment();
             Bundle bundle = new Bundle();
             bundle.putString(Constant.FROM, "section");
-            bundle.putString(Constant.NAME, section.getName());
-            bundle.putString(Constant.ID, section.getId());
+            bundle.putString(Constant.NAME, section.getCategory().getName());
+            bundle.putInt(Constant.ID, section.getCategory().getId());
             fragment.setArguments(bundle);
 
             MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();

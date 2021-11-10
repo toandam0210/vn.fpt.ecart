@@ -1,36 +1,59 @@
 package wrteam.ecart.shop.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Embedded;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.Relation;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
+@Entity
 public class Product implements Serializable {
-
-String id;
+    @PrimaryKey(autoGenerate = true)
+    Integer id;
+    @ColumnInfo
     String name;
+    @ColumnInfo
     String slug;
+    @ColumnInfo
     String category_id;
+    @ColumnInfo
     String indicator;
+    @ColumnInfo
     String manufacturer;
+    @ColumnInfo
     String made_in;
+    @ColumnInfo
     String return_status;
+    @ColumnInfo
     String cancelable_status;
+    @ColumnInfo
     String till_status;
+    @ColumnInfo
     String image;
+    @ColumnInfo
     String size_chart;
+    @ColumnInfo
     String description;
+    @ColumnInfo
     String status;
+    @ColumnInfo
     String ratings;
+    @ColumnInfo
     String number_of_ratings;
+    @ColumnInfo
     String tax_percentage;
+    @ColumnInfo
     boolean is_favorite;
-    ArrayList<Variants> variants;
-    ArrayList<String> other_images;
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -119,11 +142,4 @@ String id;
         this.is_favorite = is_favorite;
     }
 
-    public ArrayList<Variants> getVariants() {
-        return variants;
-    }
-
-    public ArrayList<String> getOther_images() {
-        return other_images;
-    }
 }

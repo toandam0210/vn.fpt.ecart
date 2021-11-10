@@ -30,8 +30,10 @@ import java.util.Map;
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.adapter.TrackerAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.OrderTrackerService;
 import wrteam.ecart.shop.model.OrderTracker;
 
 
@@ -47,10 +49,12 @@ public class OrderListReceivedFragment extends Fragment {
     private int total = 0;
     private NestedScrollView scrollView;
     private ShimmerFrameLayout mShimmerViewContainer;
+    AppDatabase db;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         root = inflater.inflate(R.layout.fragment_order_list, container, false);
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
 
         activity = getActivity();
         session = new Session(activity);
@@ -61,7 +65,7 @@ public class OrderListReceivedFragment extends Fragment {
         setHasOptionsMenu(true);
         SwipeRefreshLayout swipeLayout;
         swipeLayout = root.findViewById(R.id.swipeLayout);
-        swipeLayout.setColorSchemeColors(ContextCompat.getColor(activity,R.color.colorPrimary));
+        swipeLayout.setColorSchemeColors(ContextCompat.getColor(activity, R.color.colorPrimary));
         swipeLayout.setOnRefreshListener(() -> {
             offset = 0;
             swipeLayout.setRefreshing(false);
@@ -90,86 +94,72 @@ public class OrderListReceivedFragment extends Fragment {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    if (!jsonObject.getBoolean(Constant.ERROR)) {
-                        total = Integer.parseInt(jsonObject.getString(Constant.TOTAL));
-                        session.setData(Constant.TOTAL, String.valueOf(total));
+                    session.setData(Constant.TOTAL, String.valueOf(total));
 
-                        JSONObject object = new JSONObject(response);
-                        orderTrackerArrayList.addAll(ApiConfig.GetOrders(object.getJSONArray(Constant.DATA)));
-                        if (offset == 0) {
-                            trackerAdapter = new TrackerAdapter(activity, activity, orderTrackerArrayList);
-                            recyclerView.setAdapter(trackerAdapter);
-                            mShimmerViewContainer.stopShimmer();
-                            mShimmerViewContainer.setVisibility(View.GONE);
-                            recyclerView.setVisibility(View.VISIBLE);
-                            scrollView.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
-                                private boolean isLoadMore;
-
-                                @SuppressLint("NotifyDataSetChanged")
-                                @Override
-                                public void onScrollChange(NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-
-                                    // if (diff == 0) {
-                                    if (scrollY == (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight())) {
-                                        LinearLayoutManager linearLayoutManager1 = (LinearLayoutManager) recyclerView.getLayoutManager();
-                                        if (orderTrackerArrayList.size() < total) {
-                                            if (!isLoadMore) {
-                                                if (linearLayoutManager1 != null && linearLayoutManager1.findLastCompletelyVisibleItemPosition() == orderTrackerArrayList.size() - 1) {
-                                                    //bottom of list!
-                                                    orderTrackerArrayList.add(null);
-                                                    trackerAdapter.notifyItemInserted(orderTrackerArrayList.size() - 1);
-
-                                                    offset += Constant.LOAD_ITEM_LIMIT;
-                                                    Map<String, String> params1 = new HashMap<>();
-                                                    params1.put(Constant.GET_ORDERS, Constant.GetVal);
-                                                    params1.put(Constant.USER_ID, session.getData(Constant.ID));
-                                                    params1.put(Constant.STATUS, Constant.RECEIVED);
-                                                    params1.put(Constant.OFFSET, "" + offset);
-                                                    params1.put(Constant.LIMIT, "" + Constant.LOAD_ITEM_LIMIT);
-
-                                                    ApiConfig.RequestToVolley((result1, response1) -> {
-
-                                                        if (result1) {
-                                                            try {
-                                                                // System.out.println("====product  " + response);
-                                                                JSONObject jsonObject1 = new JSONObject(response1);
-                                                                if (!jsonObject1.getBoolean(Constant.ERROR)) {
-
-                                                                    session.setData(Constant.TOTAL, jsonObject1.getString(Constant.TOTAL));
-
-                                                                    orderTrackerArrayList.remove(orderTrackerArrayList.size() - 1);
-                                                                    trackerAdapter.notifyItemRemoved(orderTrackerArrayList.size());
-
-                                                                    JSONObject object1 = new JSONObject(response1);
-                                                                    orderTrackerArrayList.addAll(ApiConfig.GetOrders(object1.getJSONArray(Constant.DATA)));
-                                                                    trackerAdapter.notifyDataSetChanged();
-                                                                    isLoadMore = false;
-                                                                }
-                                                            } catch (JSONException e) {
-                                                                mShimmerViewContainer.stopShimmer();
-                                                                mShimmerViewContainer.setVisibility(View.GONE);
-                                                                recyclerView.setVisibility(View.VISIBLE);
-                                                            }
-                                                        }
-                                                    }, activity, Constant.ORDER_PROCESS_URL, params1, false);
-
-                                                }
-                                                isLoadMore = true;
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    } else {
-                        recyclerView.setVisibility(View.GONE);
-                        tvNoData.setVisibility(View.VISIBLE);
+                    OrderTrackerService orderTrackerService = db.orderTrackerService();
+                    orderTrackerArrayList.addAll(orderTrackerService.getAll());
+                    if (offset == 0) {
+                        trackerAdapter = new TrackerAdapter(activity, activity, orderTrackerArrayList);
+                        recyclerView.setAdapter(trackerAdapter);
                         mShimmerViewContainer.stopShimmer();
                         mShimmerViewContainer.setVisibility(View.GONE);
                         recyclerView.setVisibility(View.VISIBLE);
+                        scrollView.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
+                            private boolean isLoadMore;
+
+                            @SuppressLint("NotifyDataSetChanged")
+                            @Override
+                            public void onScrollChange(NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+
+                                // if (diff == 0) {
+                                if (scrollY == (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight())) {
+                                    LinearLayoutManager linearLayoutManager1 = (LinearLayoutManager) recyclerView.getLayoutManager();
+                                    if (orderTrackerArrayList.size() < total) {
+                                        if (!isLoadMore) {
+                                            if (linearLayoutManager1 != null && linearLayoutManager1.findLastCompletelyVisibleItemPosition() == orderTrackerArrayList.size() - 1) {
+                                                //bottom of list!
+                                                orderTrackerArrayList.add(null);
+                                                trackerAdapter.notifyItemInserted(orderTrackerArrayList.size() - 1);
+
+                                                offset += Constant.LOAD_ITEM_LIMIT;
+                                                Map<String, String> params1 = new HashMap<>();
+                                                params1.put(Constant.GET_ORDERS, Constant.GetVal);
+                                                params1.put(Constant.USER_ID, session.getData(Constant.ID));
+                                                params1.put(Constant.STATUS, Constant.RECEIVED);
+                                                params1.put(Constant.OFFSET, "" + offset);
+                                                params1.put(Constant.LIMIT, "" + Constant.LOAD_ITEM_LIMIT);
+
+                                                ApiConfig.RequestToVolley((result1, response1) -> {
+
+                                                    if (result1) {
+                                                        try {
+
+                                                            orderTrackerArrayList.remove(orderTrackerArrayList.size() - 1);
+                                                            trackerAdapter.notifyItemRemoved(orderTrackerArrayList.size());
+
+                                                            OrderTrackerService orderTrackerService = db.orderTrackerService();
+                                                            orderTrackerArrayList.addAll(orderTrackerService.getAll());
+                                                            trackerAdapter.notifyDataSetChanged();
+                                                            isLoadMore = false;
+
+                                                        } catch (Exception e) {
+                                                            mShimmerViewContainer.stopShimmer();
+                                                            mShimmerViewContainer.setVisibility(View.GONE);
+                                                            recyclerView.setVisibility(View.VISIBLE);
+                                                        }
+                                                    }
+                                                }, activity, Constant.ORDER_PROCESS_URL, params1, false);
+
+                                            }
+                                            isLoadMore = true;
+                                        }
+                                    }
+                                }
+                            }
+                        });
                     }
-                } catch (JSONException e) {
+
+                } catch (Exception e) {
                     mShimmerViewContainer.stopShimmer();
                     mShimmerViewContainer.setVisibility(View.GONE);
                     recyclerView.setVisibility(View.VISIBLE);

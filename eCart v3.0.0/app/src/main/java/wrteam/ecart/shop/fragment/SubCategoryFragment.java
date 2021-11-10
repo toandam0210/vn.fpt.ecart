@@ -34,19 +34,26 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.adapter.ProductLoadMoreAdapter;
 import wrteam.ecart.shop.adapter.SubCategoryAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.CategoryService;
+import wrteam.ecart.shop.helper.service.ProductService;
 import wrteam.ecart.shop.model.Category;
 import wrteam.ecart.shop.model.Product;
+import wrteam.ecart.shop.model.ProductInCategory;
+import wrteam.ecart.shop.model.Variants;
+import wrteam.ecart.shop.model.VariantsInProduct;
 
 public class SubCategoryFragment extends Fragment {
-    public static ArrayList<Product> productArrayList;
+    public static ArrayList<VariantsInProduct> productArrayList;
     public static ArrayList<Category> categoryArrayList;
     public ProductLoadMoreAdapter productLoadMoreAdapter;
     View root;
@@ -64,6 +71,7 @@ public class SubCategoryFragment extends Fragment {
     int resource;
     private ShimmerFrameLayout mShimmerViewContainer;
     TextView tvAlert;
+    AppDatabase db;
 
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -73,6 +81,7 @@ public class SubCategoryFragment extends Fragment {
         setHasOptionsMenu(true);
         offset = 0;
         activity = getActivity();
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
 
         session = new Session(activity);
 
@@ -94,15 +103,15 @@ public class SubCategoryFragment extends Fragment {
 
         if (ApiConfig.isConnected(activity)) {
             GetSettings(activity);
-            GetCategory();
-            GetProducts();
+            GetCategory(Integer.valueOf(id));
+            GetProducts(Integer.valueOf(id));
         }
 
         swipeLayout.setColorSchemeResources(R.color.colorPrimary);
         swipeLayout.setOnRefreshListener(() -> {
             swipeLayout.setRefreshing(false);
-            GetCategory();
-            GetProducts();
+            GetCategory(Integer.valueOf(id));
+            GetProducts(Integer.valueOf(id));
         });
 
         return root;
@@ -132,33 +141,24 @@ public class SubCategoryFragment extends Fragment {
         mShimmerViewContainer.startShimmer();
     }
 
-    void GetCategory() {
+    void GetCategory(Integer id) {
         startShimmer();
         Map<String, String> params = new HashMap<>();
-        params.put(Constant.CATEGORY_ID, id);
+        params.put(Constant.CATEGORY_ID, id.toString());
 
         categoryArrayList = new ArrayList<>();
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject object = new JSONObject(response);
-                    if (!object.getBoolean(Constant.ERROR)) {
-                        JSONArray jsonArray = object.getJSONArray(Constant.DATA);
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-                            Category category = new Category();
-                            category.setId(jsonObject.getString(Constant.ID));
-                            category.setCategory_id(jsonObject.getString(Constant.CATEGORY_ID));
-                            category.setName(jsonObject.getString(Constant.NAME));
-                            category.setSlug(jsonObject.getString(Constant.SLUG));
-                            category.setSubtitle(jsonObject.getString(Constant.SUBTITLE));
-                            category.setImage(jsonObject.getString(Constant.IMAGE));
-                            categoryArrayList.add(category);
-                        }
-                        subCategoryRecycleView.setAdapter(new SubCategoryAdapter(activity, categoryArrayList, R.layout.lyt_subcategory, "sub_cate"));
+                    CategoryService categoryService = db.categoryService();
+                    List<Category> categories = categoryService.getCategoryById(id);
+                    for (Category category : categories) {
+                        categoryArrayList.add(category);
                     }
+                    subCategoryRecycleView.setAdapter(new SubCategoryAdapter(activity, categoryArrayList, R.layout.lyt_subcategory, "sub_cate"));
+
                     stopShimmer();
-                } catch (JSONException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     stopShimmer();
                 }
@@ -167,11 +167,11 @@ public class SubCategoryFragment extends Fragment {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    void GetProducts() {
+    void GetProducts(Integer id) {
         startShimmer();
         productArrayList = new ArrayList<>();
         Map<String, String> params = new HashMap<>();
-        params.put(Constant.CATEGORY_ID, id);
+        params.put(Constant.CATEGORY_ID, id.toString());
         params.put(Constant.USER_ID, session.getData(Constant.ID));
         params.put(Constant.LIMIT, "" + Constant.LOAD_ITEM_LIMIT);
         params.put(Constant.OFFSET, "" + offset);
@@ -182,86 +182,66 @@ public class SubCategoryFragment extends Fragment {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject jsonObject1 = new JSONObject(response);
-                    if (!jsonObject1.getBoolean(Constant.ERROR)) {
-                        isSort = true;
-                        total = Integer.parseInt(jsonObject1.getString(Constant.TOTAL));
-                        JSONObject object = new JSONObject(response);
-                        JSONArray jsonArray = object.getJSONArray(Constant.DATA);
-                        try {
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                Product product = new Gson().fromJson(jsonArray.getJSONObject(i).toString(), Product.class);
-                                productArrayList.add(product);
-                            }
-                        } catch (Exception e) {
-                            stopShimmer();
-                        }
-                        if (offset == 0) {
-                            productLoadMoreAdapter = new ProductLoadMoreAdapter(activity, productArrayList, resource, from);
-                            recyclerView.setAdapter(productLoadMoreAdapter);
-                            nestedScrollView.setVisibility(View.VISIBLE);
-                            mShimmerViewContainer.setVisibility(View.GONE);
-                            mShimmerViewContainer.stopShimmer();
-                            nestedScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-                                // if (diff == 0) {
-                                if (scrollY == (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight())) {
-                                    LinearLayoutManager linearLayoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                                    if (productArrayList.size() < total) {
-                                        if (!isLoadMore) {
-                                            if (linearLayoutManager != null && linearLayoutManager.findLastCompletelyVisibleItemPosition() == productArrayList.size() - 1) {
-                                                //bottom of list!
-                                                productArrayList.add(null);
-                                                productLoadMoreAdapter.notifyItemInserted(productArrayList.size() - 1);
+                    isSort = true;
+                    ProductService productService = db.productService();
+                    List<Product> products = productService.loadProduct(id);
+                    for (Product product : products) {
+                        List<Variants> variants = db.variantsService().loadVariants(product.getId());
+                        VariantsInProduct variantsInProduct = new VariantsInProduct(product, variants);
+                        productArrayList.add(variantsInProduct);
+                    }
+                    if (offset == 0) {
+                        productLoadMoreAdapter = new ProductLoadMoreAdapter(activity, productArrayList, resource, from);
+                        recyclerView.setAdapter(productLoadMoreAdapter);
+                        nestedScrollView.setVisibility(View.VISIBLE);
+                        mShimmerViewContainer.setVisibility(View.GONE);
+                        mShimmerViewContainer.stopShimmer();
+                        nestedScrollView.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                            // if (diff == 0) {
+                            if (scrollY == (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight())) {
+                                LinearLayoutManager linearLayoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                                if (productArrayList.size() < total) {
+                                    if (!isLoadMore) {
+                                        if (linearLayoutManager != null && linearLayoutManager.findLastCompletelyVisibleItemPosition() == productArrayList.size() - 1) {
+                                            //bottom of list!
+                                            productArrayList.add(null);
+                                            productLoadMoreAdapter.notifyItemInserted(productArrayList.size() - 1);
 
-                                                offset += Integer.parseInt("" + Constant.LOAD_ITEM_LIMIT);
-                                                Map<String, String> params1 = new HashMap<>();
-                                                params1.put(Constant.CATEGORY_ID, id);
-                                                params1.put(Constant.USER_ID, session.getData(Constant.ID));
-                                                params1.put(Constant.LIMIT, "" + Constant.LOAD_ITEM_LIMIT);
-                                                params1.put(Constant.OFFSET, offset + "");
-                                                if (filterIndex != -1) {
-                                                    params1.put(Constant.SORT, filterBy);
-                                                }
-                                                ApiConfig.RequestToVolley((result1, response1) -> {
-                                                    if (result1) {
-                                                        try {
-                                                            productArrayList.remove(productArrayList.size() - 1);
-                                                            productLoadMoreAdapter.notifyItemRemoved(productArrayList.size());
-                                                            JSONObject jsonObject11 = new JSONObject(response1);
-                                                            if (!jsonObject11.getBoolean(Constant.ERROR)) {
-                                                                JSONObject object1 = new JSONObject(response1);
-                                                                JSONArray jsonArray1 = object1.getJSONArray(Constant.DATA);
-                                                                try {
-                                                                    for (int i = 0; i < jsonArray1.length(); i++) {
-                                                                        Product product = new Gson().fromJson(jsonArray1.getJSONObject(i).toString(), Product.class);
-                                                                        productArrayList.add(product);
-                                                                    }
-                                                                } catch (Exception e) {
-                                                                    nestedScrollView.setVisibility(View.VISIBLE);
-                                                                    mShimmerViewContainer.setVisibility(View.GONE);
-                                                                    mShimmerViewContainer.stopShimmer();
-                                                                }
-
-                                                                productLoadMoreAdapter.notifyDataSetChanged();
-                                                                isLoadMore = false;
-                                                            }
-                                                        } catch (JSONException e) {
-                                                            e.printStackTrace();
-                                                        }
-                                                    }
-                                                }, activity, Constant.GET_PRODUCT_BY_CATE, params1, false);
-                                                isLoadMore = true;
+                                            offset += Integer.parseInt("" + Constant.LOAD_ITEM_LIMIT);
+                                            Map<String, String> params1 = new HashMap<>();
+                                            params1.put(Constant.CATEGORY_ID, String.valueOf(id));
+                                            params1.put(Constant.USER_ID, session.getData(Constant.ID));
+                                            params1.put(Constant.LIMIT, "" + Constant.LOAD_ITEM_LIMIT);
+                                            params1.put(Constant.OFFSET, offset + "");
+                                            if (filterIndex != -1) {
+                                                params1.put(Constant.SORT, filterBy);
                                             }
+                                            ApiConfig.RequestToVolley((result1, response1) -> {
+                                                if (result1) {
+                                                    try {
+                                                        productArrayList.remove(productArrayList.size() - 1);
+                                                        productLoadMoreAdapter.notifyItemRemoved(productArrayList.size());
+                                                        for (Product product : products) {
+                                                            List<Variants> variants = db.variantsService().loadVariants(product.getId());
+                                                            VariantsInProduct variantsInProduct = new VariantsInProduct(product, variants);
+                                                            productArrayList.add(variantsInProduct);
+                                                        }
+                                                        productLoadMoreAdapter.notifyDataSetChanged();
+                                                        isLoadMore = false;
+                                                    } catch (Exception e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                }
+                                            }, activity, Constant.GET_PRODUCT_BY_CATE, params1, false);
+                                            isLoadMore = true;
                                         }
                                     }
                                 }
-                            });
-                        }
-                    } else {
-                        activity.invalidateOptionsMenu();
-                        stopShimmer();
+                            }
+                        });
                     }
-                } catch (JSONException e) {
+
+                } catch (Exception e) {
                     stopShimmer();
                 }
             }
@@ -292,8 +272,8 @@ public class SubCategoryFragment extends Fragment {
                             break;
                     }
                     if (item1 != -1) {
-                        GetCategory();
-                        GetProducts();
+                        GetCategory(Integer.valueOf(id));
+                        GetProducts(Integer.valueOf(id));
                         dialog.dismiss();
                     }
                 });

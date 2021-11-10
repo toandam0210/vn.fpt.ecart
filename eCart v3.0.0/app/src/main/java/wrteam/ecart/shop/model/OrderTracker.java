@@ -1,45 +1,76 @@
 package wrteam.ecart.shop.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
 import org.json.JSONArray;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
+@Entity
 public class OrderTracker implements Serializable {
-
-    String id;
+    @PrimaryKey(autoGenerate = true)
+    Integer id;
+    @ColumnInfo
     String user_id;
+    @ColumnInfo
     String otp;
+    @ColumnInfo
     String mobile;
+    @ColumnInfo
     String order_note;
+    @ColumnInfo
     String total;
+    @ColumnInfo
     String delivery_charge;
+    @ColumnInfo
     String tax_amount;
+    @ColumnInfo
     String tax_percentage;
+    @ColumnInfo
     String wallet_balance;
+    @ColumnInfo
     String discount;
+    @ColumnInfo
     String promo_code;
+    @ColumnInfo
     String promo_discount;
+    @ColumnInfo
     String final_total;
+    @ColumnInfo
     String payment_method;
+    @ColumnInfo
     String address;
+    @ColumnInfo
     String latitude;
+    @ColumnInfo
     String longitude;
+    @ColumnInfo
     String delivery_time;
+    @ColumnInfo
     String seller_notes;
+    @ColumnInfo
     String local_pickup;
+    @ColumnInfo
     String pickup_time;
+    @ColumnInfo
     String active_status;
+    @ColumnInfo
     String date_added;
+    @ColumnInfo
     String order_from;
+    @ColumnInfo
     String total_attachment;
+    @ColumnInfo
     String user_name;
+    @ColumnInfo
     String discount_rupees;
+    @ColumnInfo
     String bank_transfer_message;
+    @ColumnInfo
     String bank_transfer_status;
-    ArrayList<String> status_name,status_time;
-    ArrayList<OrderItem> items;
-    ArrayList<Attachment> attachment;
 
     public String getOrder_note() {
         return order_note;
@@ -57,11 +88,8 @@ public class OrderTracker implements Serializable {
         return bank_transfer_status;
     }
 
-    public ArrayList<OrderItem> getItems() {
-        return items;
-    }
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -153,9 +181,6 @@ public class OrderTracker implements Serializable {
         return order_from;
     }
 
-    public ArrayList<Attachment> getAttachment() {
-        return attachment;
-    }
 
     public String getTotal_attachment() {
         return total_attachment;
@@ -169,11 +194,5 @@ public class OrderTracker implements Serializable {
         return discount_rupees;
     }
 
-    public ArrayList<String> getStatus_name() {
-        return status_name;
-    }
 
-    public ArrayList<String> getStatus_time() {
-        return status_time;
-    }
 }

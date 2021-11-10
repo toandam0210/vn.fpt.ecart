@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.fragment.SubCategoryFragment;
@@ -24,14 +25,14 @@ import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.model.Category;
 
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHolder> {
-    public final ArrayList<Category> categoryList;
+    public final List<Category> categoryList;
     final int layout;
     final Context context;
     final String from;
     final int visibleNumber;
 
 
-    public CategoryAdapter(Context context, ArrayList<Category> categoryList, int layout, String from, int visibleNumber) {
+    public CategoryAdapter(Context context, List<Category> categoryList, int layout, String from, int visibleNumber) {
         this.context = context;
         this.categoryList = categoryList;
         this.layout = layout;
@@ -62,7 +63,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
         holder.lytMain.setOnClickListener(v -> {
             Fragment fragment = new SubCategoryFragment();
             Bundle bundle = new Bundle();
-            bundle.putString(Constant.ID, model.getId());
+            bundle.putInt(Constant.ID, model.getId());
             bundle.putString(Constant.NAME, model.getName());
             bundle.putString(Constant.FROM, "category");
             fragment.setArguments(bundle);

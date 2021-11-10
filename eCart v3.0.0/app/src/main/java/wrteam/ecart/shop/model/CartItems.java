@@ -1,26 +1,44 @@
 package wrteam.ecart.shop.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
 import java.io.Serializable;
 
-
+@Entity
 public class CartItems implements Serializable {
-
-    String id;
+    @PrimaryKey(autoGenerate = true)
+    Integer id;
+    @ColumnInfo
     String is_cod_allowed;
+    @ColumnInfo
     String product_id;
+    @ColumnInfo
     String type;
+    @ColumnInfo
     String measurement;
+    @ColumnInfo
     String price;
+    @ColumnInfo
     String discounted_price;
+    @ColumnInfo
     String serve_for;
+    @ColumnInfo
     String stock;
+    @ColumnInfo
     String name;
+    @ColumnInfo
     String image;
+    @ColumnInfo
     String unit;
+    @ColumnInfo
     String tax_percentage;
+    @ColumnInfo
     String tax_title;
 
-    public String getId() {
+
+    public Integer getId() {
         return id;
     }
 

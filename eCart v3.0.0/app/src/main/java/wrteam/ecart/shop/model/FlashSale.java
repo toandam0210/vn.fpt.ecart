@@ -1,22 +1,35 @@
 package wrteam.ecart.shop.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
 import java.io.Serializable;
 
+@Entity
 public class FlashSale implements Serializable {
-    String id;
+    @PrimaryKey(autoGenerate = true)
+    Integer id;
+    @ColumnInfo
     String flash_sales_id;
+    @ColumnInfo
     String product_id;
+    @ColumnInfo
     String price;
+    @ColumnInfo
     String discounted_price;
+    @ColumnInfo
     String start_date;
+    @ColumnInfo
     String end_date;
+    @ColumnInfo
     String status;
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

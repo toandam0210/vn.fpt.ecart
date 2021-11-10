@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.fragment.ProductDetailFragment;
@@ -34,12 +35,12 @@ import wrteam.ecart.shop.model.Product;
 
 public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolder> {
 
-    public final ArrayList<Product> productList;
+    public final List<Product> productList;
     public final Activity activity;
     final Context context;
     final Session session;
 
-    public AdapterStyle2(Context context, Activity activity, ArrayList<Product> productList) {
+    public AdapterStyle2(Context context, Activity activity, List<Product> productList) {
         this.context = context;
         this.activity = activity;
         this.productList = productList;
@@ -57,6 +58,7 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
         try {
             if (productList.size() >= 1) {
                 holder.tvStyle2_1.setText(productList.get(0).getName());
+
 
                 double price, oPrice;
                 String taxPercentage = "0";

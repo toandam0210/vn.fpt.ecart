@@ -21,13 +21,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.activity.MainActivity;
 import wrteam.ecart.shop.fragment.TrackerDetailFragment;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.OrderTrackerService;
+import wrteam.ecart.shop.model.ItemsInOrderTracker;
+import wrteam.ecart.shop.model.OrderItem;
 import wrteam.ecart.shop.model.OrderTracker;
 
 
@@ -39,6 +44,7 @@ public class TrackerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     final Activity activity;
     final ArrayList<OrderTracker> orderTrackerArrayList;
     final Context context;
+    AppDatabase db;
 
 
     public TrackerAdapter(Context context, Activity activity, ArrayList<OrderTracker> orderTrackerArrayList) {
@@ -50,6 +56,7 @@ public class TrackerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, final int viewType) {
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
         View view;
         switch (viewType) {
             case (VIEW_TYPE_ITEM):
@@ -127,8 +134,10 @@ public class TrackerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
 
                 ArrayList<String> items = new ArrayList<>();
-                for (int i = 0; i < order.getItems().size(); i++) {
-                    items.add(order.getItems().get(i).getName());
+                OrderTrackerService orderTracker = db.orderTrackerService();
+                List<OrderItem> orderItems = orderTracker.getOrderItem(order.getId());
+                for (int i = 0; i < orderItems.size(); i++) {
+                    items.add(orderItems.get(i).getName());
                 }
                 holder.tvItems.setText(Arrays.toString(items.toArray()).replace("]", "").replace("[", ""));
                 holder.tvTotalItems.setText(items.size() > 1 ? items.size() + activity.getString(R.string.items) : items.size() + activity.getString(R.string.item));

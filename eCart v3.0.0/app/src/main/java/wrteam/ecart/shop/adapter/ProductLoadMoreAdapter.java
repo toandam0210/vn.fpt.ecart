@@ -40,6 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.fragment.ProductDetailFragment;
@@ -49,6 +50,7 @@ import wrteam.ecart.shop.helper.DatabaseHelper;
 import wrteam.ecart.shop.helper.Session;
 import wrteam.ecart.shop.model.Product;
 import wrteam.ecart.shop.model.Variants;
+import wrteam.ecart.shop.model.VariantsInProduct;
 
 
 @SuppressLint({"SetTextI18n", "NotifyDataSetChanged"})
@@ -56,7 +58,7 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public final int VIEW_TYPE_ITEM = 0;
     public final int VIEW_TYPE_LOADING = 1;
     public final int resource;
-    public final ArrayList<Product> productArrayList;
+    public final List<VariantsInProduct> productArrayList;
     final Activity activity;
     final Session session;
     final boolean isLogin;
@@ -64,7 +66,7 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     final String from;
     boolean isFavorite;
 
-    public ProductLoadMoreAdapter(Activity activity, ArrayList<Product> myDataset, int resource, String from) {
+    public ProductLoadMoreAdapter(Activity activity, List<VariantsInProduct> myDataset, int resource, String from) {
         this.activity = activity;
         this.productArrayList = myDataset;
         this.resource = resource;
@@ -99,31 +101,31 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             HolderItems holder = (HolderItems) holderParent;
             holder.setIsRecyclable(false);
             try {
-                Product product = productArrayList.get(position);
+                VariantsInProduct product = productArrayList.get(position);
 
-                ArrayList<Variants> variants = product.getVariants();
+                List<Variants> variants = product.getVariants();
                 if (variants.size() == 1) {
                     holder.spinner.setVisibility(View.INVISIBLE);
                     holder.lytSpinner.setVisibility(View.INVISIBLE);
                 }
-                if (!product.getIndicator().equals("0")) {
+                if (!product.getProduct().getIndicator().equals("0")) {
                     holder.imgIndicator.setVisibility(View.VISIBLE);
-                    if (product.getIndicator().equals("1"))
+                    if (product.getProduct().getIndicator().equals("1"))
                         holder.imgIndicator.setImageResource(R.drawable.ic_veg_icon);
-                    else if (product.getIndicator().equals("2"))
+                    else if (product.getProduct().getIndicator().equals("2"))
                         holder.imgIndicator.setImageResource(R.drawable.ic_non_veg_icon);
                 }
-                holder.tvProductName.setText(Html.fromHtml(product.getName()));
+                holder.tvProductName.setText(Html.fromHtml(product.getProduct().getName()));
                 if (session.getData(Constant.ratings).equals("1")) {
                     holder.lytRatings.setVisibility(View.VISIBLE);
-                    holder.tvRatingCount.setText("(" + product.getNumber_of_ratings() + ")");
-                    holder.ratingProduct.setRating(Float.parseFloat(product.getRatings()));
+                    holder.tvRatingCount.setText("(" + product.getProduct().getNumber_of_ratings() + ")");
+                    holder.ratingProduct.setRating(Float.parseFloat(product.getProduct().getRatings()));
                 } else {
                     holder.lytRatings.setVisibility(View.GONE);
                 }
 
                 Picasso.get().
-                        load(product.getImage())
+                        load(product.getProduct().getImage())
                         .fit()
                         .centerInside()
                         .placeholder(R.drawable.placeholder)
@@ -141,7 +143,7 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     Fragment fragment = new ProductDetailFragment();
                     Bundle bundle = new Bundle();
                     bundle.putInt("variantsPosition", variants.size() == 1 ? 0 : holder.spinner.getSelectedItemPosition());
-                    bundle.putString("id", product.getId());
+                    bundle.putInt("id", product.getProduct().getId());
                     bundle.putString(Constant.FROM, from);
                     bundle.putInt("position", position);
                     fragment.setArguments(bundle);
@@ -152,7 +154,7 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 if (isLogin) {
                     holder.tvQuantity.setText(variants.get(0).getCart_count());
 
-                    if (product.getIs_favorite()) {
+                    if (product.getProduct().getIs_favorite()) {
                         holder.imgFav.setImageResource(R.drawable.ic_is_favorite);
                     } else {
                         holder.imgFav.setImageResource(R.drawable.ic_is_not_favorite);
@@ -161,7 +163,7 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                     holder.imgFav.setOnClickListener(v -> {
                         try {
-                            isFavorite = product.getIs_favorite();
+                            isFavorite = product.getProduct().getIs_favorite();
                             if (from.equals("favorite")) {
                                 isFavorite = false;
                                 productArrayList.remove(product);
@@ -176,10 +178,10 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                     holder.lottieAnimationView.setVisibility(View.VISIBLE);
                                     holder.lottieAnimationView.playAnimation();
                                 }
-                                product.setIs_favorite(isFavorite);
+                                product.getProduct().setIs_favorite(isFavorite);
                             }
 
-                            ApiConfig.AddOrRemoveFavorite(activity, session, product.getVariants().get(0).getProduct_id(), isFavorite);
+                            ApiConfig.AddOrRemoveFavorite(activity, session, Integer.valueOf(product.getVariants().get(0).getProduct_id()), isFavorite);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -187,16 +189,16 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     });
                 } else {
 
-                    holder.tvQuantity.setText(databaseHelper.CheckCartItemExist(product.getVariants().get(0).getId(), product.getId()));
+                    holder.tvQuantity.setText(databaseHelper.CheckCartItemExist(product.getVariants().get(0).getId().toString(), String.valueOf(product.getProduct().getId())));
 
-                    if (databaseHelper.getFavoriteById(product.getId())) {
+                    if (databaseHelper.getFavoriteById(product.getProduct().getId())) {
                         holder.imgFav.setImageResource(R.drawable.ic_is_favorite);
                     } else {
                         holder.imgFav.setImageResource(R.drawable.ic_is_not_favorite);
                     }
 
                     holder.imgFav.setOnClickListener(v -> {
-                        isFavorite = databaseHelper.getFavoriteById(product.getId());
+                        isFavorite = databaseHelper.getFavoriteById(product.getProduct().getId());
                         if (from.equals("favorite")) {
                             isFavorite = false;
                             productArrayList.remove(product);
@@ -212,7 +214,7 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                 holder.lottieAnimationView.playAnimation();
                             }
                         }
-                        databaseHelper.AddOrRemoveFavorite(product.getVariants().get(0).getProduct_id(), isFavorite);
+                        databaseHelper.AddOrRemoveFavorite(Integer.valueOf(product.getVariants().get(0).getProduct_id()), isFavorite);
                     });
                 }
 
@@ -240,15 +242,15 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     @Override
     public long getItemId(int position) {
-        Product product = productArrayList.get(position);
+        VariantsInProduct product = productArrayList.get(position);
         if (product != null)
-            return Integer.parseInt(product.getId());
+            return product.getProduct().getId();
         else
             return position;
     }
 
     @SuppressLint("SetTextI18n")
-    public void SetSelectedData(HolderItems holder, Variants variants, Product product) {
+    public void SetSelectedData(HolderItems holder, Variants variants, VariantsInProduct product) {
 
 //        GST_Amount (Original Cost x GST %)/100
 //        Net_Price Original Cost + GST Amount
@@ -262,8 +264,8 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 }
             }
         } else {
-            if (session.getData(variants.getId()) != null) {
-                holder.tvQuantity.setText(session.getData(variants.getId()));
+            if (session.getData(String.valueOf(variants.getId())) != null) {
+                holder.tvQuantity.setText(session.getData(String.valueOf(variants.getId())));
             } else {
                 holder.tvQuantity.setText(variants.getCart_count());
             }
@@ -272,82 +274,82 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         double OriginalPrice = 0, DiscountedPrice = 0;
         String taxPercentage = "0";
         try {
-            taxPercentage = (Double.parseDouble(product.getTax_percentage()) > 0 ? product.getTax_percentage() : "0");
+            taxPercentage = (Double.parseDouble(product.getProduct().getTax_percentage()) > 0 ? product.getProduct().getTax_percentage() : "0");
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        if (variants.getIs_flash_sales().equals("false")) {
-            DiscountedPrice = ((Float.parseFloat(variants.getDiscounted_price()) + ((Float.parseFloat(variants.getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-            OriginalPrice = (Float.parseFloat(variants.getPrice()) + ((Float.parseFloat(variants.getPrice()) * Float.parseFloat(taxPercentage)) / 100));
-
-            if (variants.getDiscounted_price().equals("0") || variants.getDiscounted_price().equals("")) {
-                holder.showDiscount.setVisibility(View.GONE);
-                holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
-            } else {
-                holder.showDiscount.setVisibility(View.VISIBLE);
-                holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
-                holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
-            }
-        } else {
-            holder.lytTimer.setVisibility(View.VISIBLE);
-            String strCurrentDate = session.getData(Constant.current_date);
-            String strStartDate = product.getVariants().get(0).getFlash_sales().get(0).getStart_date().split("\\s")[0];
-            String strEndDate = product.getVariants().get(0).getFlash_sales().get(0).getEnd_date().split("\\s")[0];
-
-            long timeDiff = ApiConfig.dayBetween(strCurrentDate, strStartDate);
-
-            if (timeDiff < 0) {
-                timeDiff = (ApiConfig.dayBetween(strCurrentDate, strEndDate) * (-1));
-            }
-
-            if (timeDiff < 0) {
-                holder.tvTimerTitle.setText(activity.getString(R.string.ends_in));
-                holder.tvTimer.setText((timeDiff * (-1)) + activity.getString(R.string.day));
-                if (product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("")) {
-                    holder.showDiscount.setVisibility(View.GONE);
-                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
-                } else {
-                    holder.showDiscount.setVisibility(View.VISIBLE);
-                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
-                    holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                    holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
-                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
-                }
-            } else if (timeDiff > 0) {
-                holder.tvTimerTitle.setText(activity.getString(R.string.starts_in));
-                holder.tvTimer.setText(timeDiff + activity.getString(R.string.day));
-                if (product.getVariants().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getDiscounted_price().equals("")) {
-                    holder.showDiscount.setVisibility(View.GONE);
-                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
-                } else {
-                    holder.showDiscount.setVisibility(View.VISIBLE);
-                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
-                    holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                    holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
-                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
-                }
-            } else {
-                holder.tvTimerTitle.setText(activity.getString(R.string.ends_in));
-                StartTimer(holder, product.getVariants().get(0));
-                if (product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("")) {
-                    holder.showDiscount.setVisibility(View.GONE);
-                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
-                } else {
-                    holder.showDiscount.setVisibility(View.VISIBLE);
-                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
-                    holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                    holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
-                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
-                }
-            }
-
-            holder.showDiscount.setText("-" + ApiConfig.GetDiscount(OriginalPrice, DiscountedPrice));
-        }
+//        if (variants.getIs_flash_sales().equals("false")) {
+//            DiscountedPrice = ((Float.parseFloat(variants.getDiscounted_price()) + ((Float.parseFloat(variants.getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+//            OriginalPrice = (Float.parseFloat(variants.getPrice()) + ((Float.parseFloat(variants.getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+//
+//            if (variants.getDiscounted_price().equals("0") || variants.getDiscounted_price().equals("")) {
+//                holder.showDiscount.setVisibility(View.GONE);
+//                holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
+//            } else {
+//                holder.showDiscount.setVisibility(View.VISIBLE);
+//                holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+//                holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
+//                holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
+//            }
+//        } else {
+//            holder.lytTimer.setVisibility(View.VISIBLE);
+//            String strCurrentDate = session.getData(Constant.current_date);
+//            String strStartDate = product.getProduct().getVariants().get(0).getFlash_sales().get(0).getStart_date().split("\\s")[0];
+//            String strEndDate = product.getVariants().get(0).getFlash_sales().get(0).getEnd_date().split("\\s")[0];
+//
+//            long timeDiff = ApiConfig.dayBetween(strCurrentDate, strStartDate);
+//
+//            if (timeDiff < 0) {
+//                timeDiff = (ApiConfig.dayBetween(strCurrentDate, strEndDate) * (-1));
+//            }
+//
+//            if (timeDiff < 0) {
+//                holder.tvTimerTitle.setText(activity.getString(R.string.ends_in));
+//                holder.tvTimer.setText((timeDiff * (-1)) + activity.getString(R.string.day));
+//                if (product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("")) {
+//                    holder.showDiscount.setVisibility(View.GONE);
+//                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
+//                } else {
+//                    holder.showDiscount.setVisibility(View.VISIBLE);
+//                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+//                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+//                    holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+//                    holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
+//                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
+//                }
+//            } else if (timeDiff > 0) {
+//                holder.tvTimerTitle.setText(activity.getString(R.string.starts_in));
+//                holder.tvTimer.setText(timeDiff + activity.getString(R.string.day));
+//                if (product.getVariants().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getDiscounted_price().equals("")) {
+//                    holder.showDiscount.setVisibility(View.GONE);
+//                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
+//                } else {
+//                    holder.showDiscount.setVisibility(View.VISIBLE);
+//                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+//                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+//                    holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+//                    holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
+//                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
+//                }
+//            } else {
+//                holder.tvTimerTitle.setText(activity.getString(R.string.ends_in));
+//                StartTimer(holder, product.getVariants().get(0));
+//                if (product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("")) {
+//                    holder.showDiscount.setVisibility(View.GONE);
+//                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
+//                } else {
+//                    holder.showDiscount.setVisibility(View.VISIBLE);
+//                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+//                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+//                    holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+//                    holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
+//                    holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
+//                }
+//            }
+//
+//            holder.showDiscount.setText("-" + ApiConfig.GetDiscount(OriginalPrice, DiscountedPrice));
+//        }
 
         holder.showDiscount.setText("-" + ApiConfig.GetDiscount(OriginalPrice, DiscountedPrice));
 
@@ -376,13 +378,13 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 }
             }
         } else {
-            if (databaseHelper.CheckCartItemExist(variants.getId(), variants.getId()).equals("0")) {
+            if (databaseHelper.CheckCartItemExist(variants.getId().toString(), variants.getId().toString()).equals("0")) {
                 holder.btnAddToCart.setVisibility(View.VISIBLE);
             } else {
                 holder.btnAddToCart.setVisibility(View.GONE);
             }
 
-            holder.tvQuantity.setText(databaseHelper.CheckCartItemExist(variants.getId(), variants.getId()));
+            holder.tvQuantity.setText(databaseHelper.CheckCartItemExist(variants.getId().toString(), variants.getId().toString()));
         }
 
         holder.btnMinusQty.setOnClickListener(view -> removeFromCartClickEvent(holder, variants));
@@ -405,15 +407,15 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     if (isLogin) {
                         if (Constant.CartValues.containsKey(variants.getId())) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                Constant.CartValues.replace(variants.getId(), "" + count);
+                                Constant.CartValues.replace(variants.getId().toString(), "" + count);
                             }
                         } else {
-                            Constant.CartValues.put(variants.getId(), "" + count);
+                            Constant.CartValues.put(variants.getId().toString(), "" + count);
                         }
                         ApiConfig.AddMultipleProductInCart(session, activity, Constant.CartValues);
                     } else {
                         holder.tvQuantity.setText("" + count);
-                        databaseHelper.AddToCart(variants.getId(), variants.getProduct_id(), "" + count);
+                        databaseHelper.AddToCart(variants.getId().toString(), variants.getProduct_id(), "" + count);
                         databaseHelper.getTotalItemOfCart(activity);
                     }
                 } else {
@@ -442,16 +444,16 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                 holder.tvQuantity.setText("" + count);
                                 if (Constant.CartValues.containsKey(variants.getId())) {
-                                    Constant.CartValues.replace(variants.getId(), "" + count);
+                                    Constant.CartValues.replace(variants.getId().toString(), "" + count);
                                 } else {
-                                    Constant.CartValues.put(variants.getId(), "" + count);
+                                    Constant.CartValues.put(variants.getId().toString(), "" + count);
                                 }
                             }
                             ApiConfig.AddMultipleProductInCart(session, activity, Constant.CartValues);
                         }
                     } else {
                         holder.tvQuantity.setText("" + count);
-                        databaseHelper.AddToCart(variants.getId(), variants.getProduct_id(), "" + count);
+                        databaseHelper.AddToCart(variants.getId().toString(), variants.getProduct_id(), "" + count);
                         databaseHelper.getTotalItemOfCart(activity);
                     }
                 } else {
@@ -532,12 +534,12 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     public class CustomAdapter extends BaseAdapter {
         final Context context;
-        final ArrayList<Variants> extraList;
+        final List<Variants> extraList;
         final LayoutInflater inflter;
         final HolderItems holder;
-        final Product product;
+        final VariantsInProduct product;
 
-        public CustomAdapter(Context applicationContext, ArrayList<Variants> extraList, HolderItems holder, Product product) {
+        public CustomAdapter(Context applicationContext, List<Variants> extraList, HolderItems holder, VariantsInProduct product) {
             this.context = applicationContext;
             this.extraList = extraList;
             this.holder = holder;
@@ -593,47 +595,47 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
-    @SuppressLint({"DefaultLocale", "SetTextI18n", "SimpleDateFormat"})
-    public void StartTimer(HolderItems itemHolder, Variants variants) {
-        try {
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            formatter.setLenient(false);
-
-            String endTime = variants.getFlash_sales().get(0).getEnd_date();
-            long milliseconds = 0;
-
-            Date endDate;
-            try {
-                endDate = formatter.parse(endTime);
-                assert endDate != null;
-                milliseconds = endDate.getTime();
-
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-
-            new CountDownTimer(milliseconds, 1000) {
-                @SuppressWarnings("deprecation")
-                @Override
-                public void onTick(long millisUntilFinished) {
-                    String hoursLeft = String.format(((millisUntilFinished / (1000 * 60 * 60)) % 24) > 9 ? "%d" : "%02d", (millisUntilFinished / (1000 * 60 * 60)) % 24);
-                    String minutesLeft = String.format(((millisUntilFinished / (1000 * 60)) % 60) > 9 ? "%d" : "%02d", (millisUntilFinished / (1000 * 60)) % 60);
-                    String secondsLeft = String.format(((millisUntilFinished / 1000) % 60) > 9 ? "%d" : "%02d", (millisUntilFinished / 1000) % 60);
-
-                    if ((Integer.parseInt(hoursLeft) >= 0 && Integer.parseInt(minutesLeft) >= 0 && Integer.parseInt(secondsLeft) >= 0)) {
-                        itemHolder.tvTimer.setText(hoursLeft + ":" + minutesLeft + ":" + secondsLeft);
-                    } else {
-                        variants.setIs_flash_sales("false");
-                        notifyItemChanged(itemHolder.getPosition());
-                    }
-                }
-
-                @Override
-                public void onFinish() {
-                }
-            }.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    @SuppressLint({"DefaultLocale", "SetTextI18n", "SimpleDateFormat"})
+//    public void StartTimer(HolderItems itemHolder, Variants variants) {
+//        try {
+//            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//            formatter.setLenient(false);
+//
+//            String endTime = variants.getFlash_sales().get(0).getEnd_date();
+//            long milliseconds = 0;
+//
+//            Date endDate;
+//            try {
+//                endDate = formatter.parse(endTime);
+//                assert endDate != null;
+//                milliseconds = endDate.getTime();
+//
+//            } catch (ParseException e) {
+//                e.printStackTrace();
+//            }
+//
+//            new CountDownTimer(milliseconds, 1000) {
+//                @SuppressWarnings("deprecation")
+//                @Override
+//                public void onTick(long millisUntilFinished) {
+//                    String hoursLeft = String.format(((millisUntilFinished / (1000 * 60 * 60)) % 24) > 9 ? "%d" : "%02d", (millisUntilFinished / (1000 * 60 * 60)) % 24);
+//                    String minutesLeft = String.format(((millisUntilFinished / (1000 * 60)) % 60) > 9 ? "%d" : "%02d", (millisUntilFinished / (1000 * 60)) % 60);
+//                    String secondsLeft = String.format(((millisUntilFinished / 1000) % 60) > 9 ? "%d" : "%02d", (millisUntilFinished / 1000) % 60);
+//
+//                    if ((Integer.parseInt(hoursLeft) >= 0 && Integer.parseInt(minutesLeft) >= 0 && Integer.parseInt(secondsLeft) >= 0)) {
+//                        itemHolder.tvTimer.setText(hoursLeft + ":" + minutesLeft + ":" + secondsLeft);
+//                    } else {
+//                        variants.setIs_flash_sales("false");
+//                        notifyItemChanged(itemHolder.getPosition());
+//                    }
+//                }
+//
+//                @Override
+//                public void onFinish() {
+//                }
+//            }.start();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 }

@@ -80,6 +80,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.helper.album.Album;
 import wrteam.ecart.shop.helper.album.AlbumConfig;
+import wrteam.ecart.shop.helper.service.ProductService;
 import wrteam.ecart.shop.model.OrderTracker;
 import wrteam.ecart.shop.model.Product;
 import wrteam.ecart.shop.model.Slider;
@@ -319,7 +320,7 @@ public class ApiConfig extends Application {
         }, activity, Constant.CART_URL, params, false);
     }
 
-    public static void AddOrRemoveFavorite(Activity activity, Session session, String productID, boolean isAdd) {
+    public static void AddOrRemoveFavorite(Activity activity, Session session, Integer productID, boolean isAdd) {
         Map<String, String> params = new HashMap<>();
         if (isAdd) {
             params.put(Constant.ADD_TO_FAVORITES, Constant.GetVal);
@@ -327,7 +328,7 @@ public class ApiConfig extends Application {
             params.put(Constant.REMOVE_FROM_FAVORITES, Constant.GetVal);
         }
         params.put(Constant.USER_ID, session.getData(Constant.ID));
-        params.put(Constant.PRODUCT_ID, productID);
+        params.put(Constant.PRODUCT_ID, String.valueOf(productID));
         ApiConfig.RequestToVolley((result, response) -> {
         }, activity, Constant.GET_FAVORITES_URL, params, false);
     }
@@ -483,7 +484,7 @@ public class ApiConfig extends Application {
         }
     }
 
-    public static void addMarkers(int currentPage, ArrayList<Slider> imageList, LinearLayout mMarkersLayout, Context context) {
+    public static void addMarkers(int currentPage, List<String> imageList, LinearLayout mMarkersLayout, Context context) {
 
         if (context != null) {
             TextView[] markers = new TextView[imageList.size()];
@@ -742,16 +743,11 @@ public class ApiConfig extends Application {
     }
 
 
-    public static ArrayList<Product> GetProductList(JSONArray jsonArray) {
-        ArrayList<Product> productArrayList = new ArrayList<>();
-        try {
-            for (int i = 0; i < jsonArray.length(); i++) {
-                Product product = new Gson().fromJson(jsonArray.getJSONObject(i).toString(), Product.class);
-                productArrayList.add(product);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public static List<Product> GetProductList(AppDatabase db) {
+        List<Product> productArrayList = new ArrayList<>();
+        ProductService productService = db.productService();
+        productArrayList = productService.getAll();
+
         return productArrayList;
     }
 

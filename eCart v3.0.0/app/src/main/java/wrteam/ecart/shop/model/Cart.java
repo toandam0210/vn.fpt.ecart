@@ -1,22 +1,32 @@
 package wrteam.ecart.shop.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.PrimaryKey;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 
+@Entity
 public class Cart implements Serializable {
-
-    String id;
+    @PrimaryKey(autoGenerate = true)
+    Integer id;
+    @ColumnInfo
     String user_id;
+    @ColumnInfo
     String product_id;
+    @ColumnInfo
     String product_variant_id;
+    @ColumnInfo
     String qty;
-    ArrayList<CartItems> item;
 
-    public String getId() {
+
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -48,7 +58,4 @@ public class Cart implements Serializable {
         this.qty = qty;
     }
 
-    public ArrayList<CartItems> getItems() {
-        return item;
-    }
 }

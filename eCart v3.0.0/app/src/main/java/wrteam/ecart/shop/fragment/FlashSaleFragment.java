@@ -19,11 +19,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.adapter.FlashSaleAdapter;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.model.Product;
+import wrteam.ecart.shop.model.Slider;
 
 
 public class FlashSaleFragment extends Fragment {
@@ -60,10 +62,13 @@ public class FlashSaleFragment extends Fragment {
         return root;
     }
 
-    public static FlashSaleFragment AddFragment(JSONObject jsonObject) {
+    public static FlashSaleFragment AddFragment(Slider slider) {
         FlashSaleFragment fragment = new FlashSaleFragment();
         Bundle args = new Bundle();
-        args.putString("data", jsonObject.toString());
+        args.putString("name", slider.getName());
+        args.putString("typeId", slider.getType_id());
+        args.putString("image", slider.getImage());
+        args.putString("type", slider.getType());
         fragment.setArguments(args);
         return fragment;
     }

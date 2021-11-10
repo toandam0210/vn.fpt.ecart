@@ -32,8 +32,10 @@ import java.util.Map;
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.adapter.CategoryAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.CategoryService;
 import wrteam.ecart.shop.model.Category;
 
 
@@ -46,6 +48,7 @@ public class CategoryFragment extends Fragment {
     View root;
     Activity activity;
     private ShimmerFrameLayout mShimmerViewContainer;
+    AppDatabase db;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -63,7 +66,8 @@ public class CategoryFragment extends Fragment {
         categoryRecyclerView = root.findViewById(R.id.categoryRecyclerView);
 
         categoryRecyclerView.setLayoutManager(new GridLayoutManager(activity, Constant.GRID_COLUMN));
-        swipeLayout.setColorSchemeColors(ContextCompat.getColor(activity,R.color.colorPrimary));
+        swipeLayout.setColorSchemeColors(ContextCompat.getColor(activity, R.color.colorPrimary));
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
 
 
         swipeLayout.setOnRefreshListener(() -> {
@@ -93,27 +97,16 @@ public class CategoryFragment extends Fragment {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject object = new JSONObject(response);
                     categoryArrayList = new ArrayList<>();
-                    if (!object.getBoolean(Constant.ERROR)) {
-                        JSONArray jsonArray = object.getJSONArray(Constant.DATA);
-                        Gson gson = new Gson();
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            JSONObject jsonObject = jsonArray.getJSONObject(i);
-                            Category category = gson.fromJson(jsonObject.toString(), Category.class);
-                            categoryArrayList.add(category);
-                        }
-                        categoryRecyclerView.setAdapter(new CategoryAdapter(activity, categoryArrayList, R.layout.lyt_subcategory, "category", 0));
-                        mShimmerViewContainer.stopShimmer();
-                        mShimmerViewContainer.setVisibility(View.GONE);
-                        categoryRecyclerView.setVisibility(View.VISIBLE);
-                    } else {
-                        tvNoData.setVisibility(View.VISIBLE);
-                        mShimmerViewContainer.stopShimmer();
-                        mShimmerViewContainer.setVisibility(View.GONE);
-                        categoryRecyclerView.setVisibility(View.GONE);
-                    }
-                } catch (JSONException e) {
+                    CategoryService categoryService = db.categoryService();
+                    categoryArrayList.addAll(categoryService.getAll());
+
+                    categoryRecyclerView.setAdapter(new CategoryAdapter(activity, categoryArrayList, R.layout.lyt_subcategory, "category", 0));
+                    mShimmerViewContainer.stopShimmer();
+                    mShimmerViewContainer.setVisibility(View.GONE);
+                    categoryRecyclerView.setVisibility(View.VISIBLE);
+
+                } catch (Exception e) {
                     mShimmerViewContainer.stopShimmer();
                     mShimmerViewContainer.setVisibility(View.GONE);
                     categoryRecyclerView.setVisibility(View.GONE);

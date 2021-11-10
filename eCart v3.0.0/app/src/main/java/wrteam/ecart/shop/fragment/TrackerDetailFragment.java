@@ -178,7 +178,7 @@ public class TrackerDetailFragment extends Fragment {
         id = getArguments().getString("id");
         if (id.equals("")) {
             order = (OrderTracker) getArguments().getSerializable("model");
-            id = order.getId();
+            id = order.getId().toString();
             SetData(order);
         } else {
             getOrderDetails(id);
@@ -216,7 +216,7 @@ public class TrackerDetailFragment extends Fragment {
 
             final Map<String, String> params = new HashMap<>();
             params.put(Constant.UPDATE_ORDER_STATUS, Constant.GetVal);
-            params.put(Constant.ID, order.getId());
+            params.put(Constant.ID, order.getId().toString());
             params.put(Constant.STATUS, Constant.CANCELLED);
             final AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity);
             // Setting Dialog Message
@@ -494,7 +494,6 @@ public class TrackerDetailFragment extends Fragment {
 
             tvPickupTime.setText(order.getPickup_time().equals("0000-00-00 00:00:00") ? activity.getString(R.string.estimate_pickup_time_msg) : order.getPickup_time());
 
-            productImagesAdapter = new ProductImagesAdapter(activity, order.getAttachment(), "api", order.getId());
             recyclerViewImageGallery.setAdapter(productImagesAdapter);
 
             lytPickUp.setVisibility(order.getLocal_pickup().equals("1") ? View.VISIBLE : View.GONE);
@@ -639,7 +638,7 @@ public class TrackerDetailFragment extends Fragment {
             MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
             builder.addFormDataPart(Constant.AccessKey, Constant.AccessKeyVal);
             builder.addFormDataPart(Constant.UPLOAD_BANK_TRANSFER_ATTACHMENT, Constant.GetVal);
-            builder.addFormDataPart(Constant.ORDER_ID, order.getId());
+            builder.addFormDataPart(Constant.ORDER_ID, order.getId().toString());
 
             for (int i = 0; i < mAlbumFiles.size(); i++) {
                 File file = new File(mAlbumFiles.get(i).getPath());
