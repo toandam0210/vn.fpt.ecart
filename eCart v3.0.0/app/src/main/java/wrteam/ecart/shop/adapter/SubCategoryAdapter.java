@@ -60,7 +60,7 @@ public class SubCategoryAdapter extends RecyclerView.Adapter<SubCategoryAdapter.
             AppCompatActivity activity1 = (AppCompatActivity) context;
             Fragment fragment = new ProductListFragment();
             Bundle bundle = new Bundle();
-            bundle.putString(Constant.ID, model.getId());
+            bundle.putInt(Constant.ID, model.getId());
             bundle.putString(Constant.NAME, model.getName());
             bundle.putString(Constant.FROM, from);
             fragment.setArguments(bundle);

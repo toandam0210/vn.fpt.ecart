@@ -14,5 +14,21 @@ public class ItemInCart {
                 entityColumn = "id",
                 associateBy = @Junction(Cart.class)
         )
-        public List<OrderItem> orderItems;
+        public List<CartItems> cartItems;
+
+        public Cart getCart() {
+                return cart;
+        }
+
+        public void setCart(Cart cart) {
+                this.cart = cart;
+        }
+
+        public List<CartItems> getOrderItems() {
+                return cartItems;
+        }
+
+        public void setOrderItems(List<CartItems> orderItems) {
+                this.cartItems = orderItems;
+        }
 }

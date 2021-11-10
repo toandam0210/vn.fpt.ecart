@@ -23,16 +23,23 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.activity.MainActivity;
 import wrteam.ecart.shop.fragment.ProductDetailFragment;
 import wrteam.ecart.shop.fragment.ProductListFragment;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.FlashSaleService;
+import wrteam.ecart.shop.helper.service.VariantsService;
+import wrteam.ecart.shop.model.FlashSale;
+import wrteam.ecart.shop.model.FlashSaleInVariants;
 import wrteam.ecart.shop.model.Product;
 import wrteam.ecart.shop.model.Variants;
+import wrteam.ecart.shop.model.VariantsInProduct;
 
 /**
  * Created by shree1 on 3/16/2017.
@@ -44,6 +51,7 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
     public final Activity activity;
     final String from;
     final Session session;
+    AppDatabase db;
 
     public FlashSaleAdapter(Activity activity, ArrayList<Product> productList, String from) {
         this.activity = activity;
@@ -63,6 +71,19 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
         try {
             final Product product = productList.get(position);
             holder.setIsRecyclable(false);
+            db = AppDatabase.getDbInstance(activity.getApplicationContext());
+            VariantsService variantsService = db.variantsService();
+            List<Variants> variants = variantsService.loadVariants(product.getId());
+            VariantsInProduct variant = new VariantsInProduct(product, variants);
+            List<Variants> variants1 = variantsService.loadVariantsByStatus(product.getId(), true);
+            FlashSaleService flashSaleService = db.flashSaleService();
+            List<FlashSale> flashSales = flashSaleService.getAll();
+            List<FlashSaleInVariants> listFlashSale = new ArrayList<>();
+            for (Variants variants2 : variants1) {
+                FlashSaleInVariants flashSaleInVariants = new FlashSaleInVariants(variants2,flashSales);
+                listFlashSale.add(flashSaleInVariants);
+            }
+
             if (from.equals("home")) {
                 if (position == 5) {
                     holder.tvViewAll.setVisibility(View.VISIBLE);
@@ -94,8 +115,8 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
             }
 
             String strCurrentDate = session.getData(Constant.current_date);
-            String strStartDate = product.getVariants().get(0).getFlash_sales().get(0).getStart_date().split("\\s")[0];
-            String strEndDate = product.getVariants().get(0).getFlash_sales().get(0).getEnd_date().split("\\s")[0];
+            String strStartDate = listFlashSale.get(0).getFlashSales().get(0).getStart_date().split("\\s")[0];
+            String strEndDate = listFlashSale.get(0).getFlashSales().get(0).getEnd_date().split("\\s")[0];
 
             long timeDiff = ApiConfig.dayBetween(strCurrentDate, strStartDate);
 
@@ -106,13 +127,13 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
             if (timeDiff < 0) {
                 holder.tvTimerTitle.setText(activity.getString(R.string.ends_in));
                 holder.tvTimer.setText((timeDiff * (-1)) + activity.getString(R.string.day));
-                if (product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("")) {
+                if (listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price().equals("0") || listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price().equals("")) {
                     holder.showDiscount.setVisibility(View.GONE);
                     holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
                 } else {
                     holder.showDiscount.setVisibility(View.VISIBLE);
-                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+                    DiscountedPrice = ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price()) + ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                    OriginalPrice = (Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getPrice()) + ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
                     holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                     holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
                     holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
@@ -120,27 +141,27 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
             } else if (timeDiff > 0) {
                 holder.tvTimerTitle.setText(activity.getString(R.string.starts_in));
                 holder.tvTimer.setText(timeDiff + activity.getString(R.string.day));
-                if (product.getVariants().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getDiscounted_price().equals("")) {
+                if (listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price().equals("0") || listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price().equals("")) {
                     holder.showDiscount.setVisibility(View.GONE);
                     holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
                 } else {
                     holder.showDiscount.setVisibility(View.VISIBLE);
-                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+                    DiscountedPrice = ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price()) + ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                    OriginalPrice = (Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getPrice()) + ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
                     holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                     holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
                     holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
                 }
             } else {
                 holder.tvTimerTitle.setText(activity.getString(R.string.ends_in));
-                StartTimer(holder, product.getVariants().get(0));
-                if (product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price().equals("")) {
+                StartTimer(holder, listFlashSale.get(0));
+                if (listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price().equals("0") || listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price().equals("")) {
                     holder.showDiscount.setVisibility(View.GONE);
                     holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
                 } else {
                     holder.showDiscount.setVisibility(View.VISIBLE);
-                    DiscountedPrice = ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    OriginalPrice = (Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getFlash_sales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+                    DiscountedPrice = ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price()) + ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                    OriginalPrice = (Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getPrice()) + ((Float.parseFloat(listFlashSale.get(0).getFlashSales().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
                     holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                     holder.tvOriginalPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + OriginalPrice));
                     holder.tvPrice.setText(session.getData(Constant.currency) + ApiConfig.StringFormat("" + DiscountedPrice));
@@ -150,11 +171,11 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
             holder.showDiscount.setText("-" + ApiConfig.GetDiscount(OriginalPrice, DiscountedPrice));
 
             holder.lytMain_.setOnClickListener(view -> {
-                if (product.getVariants().get(0).getProduct_id() != null) {
+                if (listFlashSale.get(0).getFlashSales().get(0).getProduct_id() != null) {
                     AppCompatActivity activity1 = (AppCompatActivity) activity;
                     Fragment fragment = new ProductDetailFragment();
                     Bundle bundle = new Bundle();
-                    bundle.putString(Constant.ID, product.getVariants().get(0).getProduct_id());
+                    bundle.putString(Constant.ID, listFlashSale.get(0).getFlashSales().get(0).getProduct_id());
                     bundle.putString(Constant.FROM, "section");
                     bundle.putInt("variantsPosition", 0);
                     fragment.setArguments(bundle);
@@ -167,7 +188,7 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
                 Bundle bundle = new Bundle();
                 bundle.putString(Constant.FROM, "flash_sale");
                 bundle.putString(Constant.NAME, activity.getString(R.string.flash_sale));
-                bundle.putString(Constant.ID, product.getVariants().get(0).getFlash_sales().get(0).getFlash_sales_id());
+                bundle.putString(Constant.ID, listFlashSale.get(0).getFlashSales().get(0).getFlash_sales_id());
                 fragment.setArguments(bundle);
                 MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
             });
@@ -220,12 +241,12 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
     }
 
     @SuppressLint({"DefaultLocale", "SetTextI18n", "SimpleDateFormat"})
-    public void StartTimer(HolderItems itemHolder, Variants variants) {
+    public void StartTimer(HolderItems itemHolder, FlashSaleInVariants variants) {
         try {
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             formatter.setLenient(false);
 
-            String endTime = variants.getFlash_sales().get(0).getEnd_date();
+            String endTime = variants.getFlashSales().get(0).getEnd_date();
             long milliseconds = 0;
 
             Date endDate;
@@ -249,7 +270,7 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
                     if ((Integer.parseInt(hoursLeft) >= 0 && Integer.parseInt(minutesLeft) >= 0 && Integer.parseInt(secondsLeft) >= 0)) {
                         itemHolder.tvTimer.setText(hoursLeft + ":" + minutesLeft + ":" + secondsLeft);
                     } else {
-                        variants.setIs_flash_sales("false");
+                        variants.getVariants().setIs_flash_sales(false);
                         notifyItemChanged(itemHolder.getPosition());
                     }
                 }

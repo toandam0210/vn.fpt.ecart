@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.adapter.SliderAdapter;
@@ -28,7 +29,7 @@ import wrteam.ecart.shop.model.Slider;
 public class FullScreenViewFragment extends Fragment {
     View root;
     int pos;
-    ArrayList<Slider> imageList;
+    List<String> imageList;
     LinearLayout mMarkersLayout;
     ViewPager viewPager;
     Activity activity;

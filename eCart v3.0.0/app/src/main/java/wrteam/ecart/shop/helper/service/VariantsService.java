@@ -15,4 +15,7 @@ public interface VariantsService {
 
     @Query("SELECT * FROM Variants where product_id = :productId")
     List<Variants> loadVariants(Integer productId);
+
+    @Query("SELECT * FROM Variants where product_id = :productId and is_flash_sales = :isFlashSale")
+    List<Variants> loadVariantsByStatus(Integer productId, boolean isFlashSale);
 }

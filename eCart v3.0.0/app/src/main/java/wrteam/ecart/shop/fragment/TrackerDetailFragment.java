@@ -48,6 +48,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -58,10 +59,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import wrteam.ecart.shop.R;
-import wrteam.ecart.shop.adapter.ImageAdapter;
 import wrteam.ecart.shop.adapter.ItemsAdapter;
-import wrteam.ecart.shop.adapter.ProductImagesAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
 import wrteam.ecart.shop.helper.album.Album;
@@ -69,6 +69,8 @@ import wrteam.ecart.shop.helper.album.AlbumFile;
 import wrteam.ecart.shop.helper.album.api.widget.Widget;
 import wrteam.ecart.shop.helper.album.widget.divider.Api21ItemDivider;
 import wrteam.ecart.shop.helper.album.widget.divider.Divider;
+import wrteam.ecart.shop.helper.service.OrderTrackerService;
+import wrteam.ecart.shop.model.ItemsInOrderTracker;
 import wrteam.ecart.shop.model.OrderTracker;
 
 @SuppressLint("NotifyDataSetChanged")
@@ -81,7 +83,7 @@ public class TrackerDetailFragment extends Fragment {
     @SuppressLint("StaticFieldLeak")
     public static LinearLayout lytTracker, lytPickUp;
     View root;
-    OrderTracker order;
+    ItemsInOrderTracker itemsInOrderTracker;
     TextView tvOrderOTP, tvItemTotal, tvDeliveryCharge, tvTotal, tvPromoCode,
             tvPCAmount, tvWallet, tvFinalTotal, tvDPercent, tvDAmount, tvCancelDetail,
             tvOtherDetails, tvOrderID, tvOrderDate, tvPickUpAddress, btnOtherImages, btnSubmit,
@@ -101,8 +103,9 @@ public class TrackerDetailFragment extends Fragment {
 
     LinearLayout lytReceipt_;
     private ArrayList<AlbumFile> mAlbumFiles;
-    private ImageAdapter mAdapter;
-    ProductImagesAdapter productImagesAdapter;
+    //private ImageAdapter mAdapter;
+    //ProductImagesAdapter productImagesAdapter;
+    AppDatabase db;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -157,7 +160,7 @@ public class TrackerDetailFragment extends Fragment {
         btnCallToSeller = root.findViewById(R.id.btnCallToSeller);
         tvPickUpAddress = root.findViewById(R.id.tvPickUpAddress);
         mShimmerViewContainer = root.findViewById(R.id.mShimmerViewContainer);
-
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
         hashMap = new HashMap<>();
 
         GetPaymentConfig();
@@ -170,16 +173,16 @@ public class TrackerDetailFragment extends Fragment {
         Divider divider = new Api21ItemDivider(Color.TRANSPARENT, 10, 10);
         recyclerViewReceiptImages.addItemDecoration(divider);
         recyclerViewReceiptImages.setNestedScrollingEnabled(false);
-        mAdapter = new ImageAdapter(activity, (view, position) -> previewImage(position));
-        recyclerViewReceiptImages.setAdapter(mAdapter);
+//        mAdapter = new ImageAdapter(activity, (view, position) -> previewImage(position));
+//        recyclerViewReceiptImages.setAdapter(mAdapter);
 
 
         assert getArguments() != null;
         id = getArguments().getString("id");
         if (id.equals("")) {
-            order = (OrderTracker) getArguments().getSerializable("model");
-            id = order.getId().toString();
-            SetData(order);
+            itemsInOrderTracker = (ItemsInOrderTracker) getArguments().getSerializable("model");
+            id = itemsInOrderTracker.getCategory().getId().toString();
+            SetData(itemsInOrderTracker);
         } else {
             getOrderDetails(id);
         }
@@ -216,7 +219,7 @@ public class TrackerDetailFragment extends Fragment {
 
             final Map<String, String> params = new HashMap<>();
             params.put(Constant.UPDATE_ORDER_STATUS, Constant.GetVal);
-            params.put(Constant.ID, order.getId().toString());
+            params.put(Constant.ID, itemsInOrderTracker.getCategory().getId().toString());
             params.put(Constant.STATUS, Constant.CANCELLED);
             final AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity);
             // Setting Dialog Message
@@ -389,15 +392,9 @@ public class TrackerDetailFragment extends Fragment {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    if (!jsonObject.getBoolean(Constant.ERROR)) {
-                        SetData(ApiConfig.GetOrders(jsonObject.getJSONArray(Constant.DATA)).get(0));
-                    } else {
-                        scrollView.setVisibility(View.VISIBLE);
-                        mShimmerViewContainer.setVisibility(View.GONE);
-                        mShimmerViewContainer.stopShimmer();
-                    }
-                } catch (JSONException e) {
+                    OrderTrackerService orderTrackerService = db.orderTrackerService();
+                    List<OrderTracker> orderTracker = orderTrackerService.getAll();
+                } catch (Exception e) {
                     scrollView.setVisibility(View.VISIBLE);
                     mShimmerViewContainer.setVisibility(View.GONE);
                     mShimmerViewContainer.stopShimmer();
@@ -433,7 +430,7 @@ public class TrackerDetailFragment extends Fragment {
                     )
                     .onResult(result -> {
                         mAlbumFiles = result;
-                        mAdapter.notifyDataSetChanged(mAlbumFiles);
+                        //mAdapter.notifyDataSetChanged(mAlbumFiles);
                         //mTvMessage.setVisibility(result.size() > 0 ? View.VISIBLE : View.GONE);
                     })
                     .start();
@@ -452,7 +449,7 @@ public class TrackerDetailFragment extends Fragment {
                 )
                 .onResult(result -> {
                     mAlbumFiles = result;
-                    mAdapter.notifyDataSetChanged(mAlbumFiles);
+                    //mAdapter.notifyDataSetChanged(mAlbumFiles);
                     //mTvMessage.setVisibility(result.size() > 0 ? View.VISIBLE : View.GONE);
                 })
                 .onCancel(result -> {
@@ -463,44 +460,44 @@ public class TrackerDetailFragment extends Fragment {
 
 
     @SuppressLint("SetTextI18n")
-    public void SetData(OrderTracker order) {
+    public void SetData(ItemsInOrderTracker itemsInOrderTracker) {
         try {
-            tvOrderID.setText(order.getId());
-            if (order.getOtp().equals("0") || order.getOtp().equals("")) {
+            tvOrderID.setText(itemsInOrderTracker.getCategory().getId());
+            if (itemsInOrderTracker.getCategory().getOtp().equals("0") || itemsInOrderTracker.getCategory().getOtp().equals("")) {
                 lytOTP.setVisibility(View.GONE);
             } else {
-                tvOrderOTP.setText(order.getOtp());
+                tvOrderOTP.setText(itemsInOrderTracker.getCategory().getOtp());
             }
-            tvOrderDate.setText(order.getDate_added());
-            tvOtherDetails.setText(getString(R.string.name_1) + order.getUser_name() + getString(R.string.mobile_no_1) + order.getMobile() + getString(R.string.address_1) + order.getAddress());
-            totalAfterTax = (Double.parseDouble(order.getTotal()) + Double.parseDouble(order.getDelivery_charge()) + Double.parseDouble(order.getTax_amount()));
-            tvItemTotal.setText(session.getData(Constant.currency) + ApiConfig.StringFormat(order.getTotal()));
-            tvDeliveryCharge.setText("+ " + session.getData(Constant.currency) + ApiConfig.StringFormat(order.getDelivery_charge()));
-            tvDPercent.setText(getString(R.string.discount) + "(" + order.getDiscount() + "%) :");
-            tvDAmount.setText("- " + session.getData(Constant.currency) + ApiConfig.StringFormat(order.getDiscount_rupees()));
+            tvOrderDate.setText(itemsInOrderTracker.getCategory().getDate_added());
+            tvOtherDetails.setText(getString(R.string.name_1) + itemsInOrderTracker.getCategory().getUser_name() + getString(R.string.mobile_no_1) + itemsInOrderTracker.getCategory().getMobile() + getString(R.string.address_1) + itemsInOrderTracker.getCategory().getAddress());
+            totalAfterTax = (Double.parseDouble(itemsInOrderTracker.getCategory().getTotal()) + Double.parseDouble(itemsInOrderTracker.getCategory().getDelivery_charge()) + Double.parseDouble(itemsInOrderTracker.getCategory().getTax_amount()));
+            tvItemTotal.setText(session.getData(Constant.currency) + ApiConfig.StringFormat(itemsInOrderTracker.getCategory().getTotal()));
+            tvDeliveryCharge.setText("+ " + session.getData(Constant.currency) + ApiConfig.StringFormat(itemsInOrderTracker.getCategory().getDelivery_charge()));
+            tvDPercent.setText(getString(R.string.discount) + "(" + itemsInOrderTracker.getCategory().getDiscount() + "%) :");
+            tvDAmount.setText("- " + session.getData(Constant.currency) + ApiConfig.StringFormat(itemsInOrderTracker.getCategory().getDiscount_rupees()));
             tvTotal.setText(session.getData(Constant.currency) + totalAfterTax);
-            tvPCAmount.setText("- " + session.getData(Constant.currency) + ApiConfig.StringFormat(order.getPromo_discount()));
-            tvWallet.setText("- " + session.getData(Constant.currency) + ApiConfig.StringFormat(order.getWallet_balance()));
-            tvFinalTotal.setText(session.getData(Constant.currency) + ApiConfig.StringFormat(order.getFinal_total()));
+            tvPCAmount.setText("- " + session.getData(Constant.currency) + ApiConfig.StringFormat(itemsInOrderTracker.getCategory().getPromo_discount()));
+            tvWallet.setText("- " + session.getData(Constant.currency) + ApiConfig.StringFormat(itemsInOrderTracker.getCategory().getWallet_balance()));
+            tvFinalTotal.setText(session.getData(Constant.currency) + ApiConfig.StringFormat(itemsInOrderTracker.getCategory().getFinal_total()));
 
-            lytTracker.setWeightSum(order.getStatus_name().size() + (order.getStatus_name().size() - 1));
+            //lytTracker.setWeightSum(order.getStatus_name().size() + (order.getStatus_name().size() - 1));
 
-            tvReceiptStatus.setText(order.getBank_transfer_status().equalsIgnoreCase("0") ? getString(R.string.pending) : order.getBank_transfer_status().equalsIgnoreCase("1") ? getString(R.string.accepted) : getString(R.string.rejected));
+            tvReceiptStatus.setText(itemsInOrderTracker.getCategory().getBank_transfer_status().equalsIgnoreCase("0") ? getString(R.string.pending) : itemsInOrderTracker.getCategory().getBank_transfer_status().equalsIgnoreCase("1") ? getString(R.string.accepted) : getString(R.string.rejected));
 
 
-                tvReceiptStatusReason.setText(order.getBank_transfer_message());
+                tvReceiptStatusReason.setText(itemsInOrderTracker.getCategory().getBank_transfer_message());
 
             tvPickUpAddress.setText(session.getData(Constant.store_address));
 
-            tvPickupTime.setText(order.getPickup_time().equals("0000-00-00 00:00:00") ? activity.getString(R.string.estimate_pickup_time_msg) : order.getPickup_time());
+            tvPickupTime.setText(itemsInOrderTracker.getCategory().getPickup_time().equals("0000-00-00 00:00:00") ? activity.getString(R.string.estimate_pickup_time_msg) : itemsInOrderTracker.getCategory().getPickup_time());
 
-            recyclerViewImageGallery.setAdapter(productImagesAdapter);
+            //recyclerViewImageGallery.setAdapter(productImagesAdapter);
 
-            lytPickUp.setVisibility(order.getLocal_pickup().equals("1") ? View.VISIBLE : View.GONE);
+            lytPickUp.setVisibility(itemsInOrderTracker.getCategory().getLocal_pickup().equals("1") ? View.VISIBLE : View.GONE);
 
-            lytReceipt.setVisibility(order.getPayment_method().equals("bank transfer") ? View.VISIBLE : View.GONE);
+            lytReceipt.setVisibility(itemsInOrderTracker.getCategory().getPayment_method().equals("bank transfer") ? View.VISIBLE : View.GONE);
 
-            if (order.getLocal_pickup().equals("1")) {
+            if (itemsInOrderTracker.getCategory().getLocal_pickup().equals("1")) {
                 btnCallToSeller.setOnClickListener(v -> {
                     try {
                         Intent callIntent = new Intent(Intent.ACTION_CALL);
@@ -549,24 +546,24 @@ public class TrackerDetailFragment extends Fragment {
             }
 
 
-            for (int i = 0; i < order.getStatus_name().size(); i++) {
-                createStatusUi(activity, lytTracker, order.getStatus_name().get(i), order.getStatus_time().get(i));
-                if (i != order.getStatus_name().size() - 1) {
-                    View view = new View(activity);
-                    view.setBackgroundColor(ContextCompat.getColor(activity, R.color.colorPrimary));
-                    LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (int) getResources().getDimension(R.dimen._2sdp));
-                    params1.weight = 1.0f;
-                    view.setLayoutParams(params1);
-                    lytTracker.addView(view);
-                }
-
-            }
+//            for (int i = 0; i < order.getStatus_name().size(); i++) {
+//                createStatusUi(activity, lytTracker, order.getStatus_name().get(i), order.getStatus_time().get(i));
+//                if (i != order.getStatus_name().size() - 1) {
+//                    View view = new View(activity);
+//                    view.setBackgroundColor(ContextCompat.getColor(activity, R.color.colorPrimary));
+//                    LinearLayout.LayoutParams params1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (int) getResources().getDimension(R.dimen._2sdp));
+//                    params1.weight = 1.0f;
+//                    view.setLayoutParams(params1);
+//                    lytTracker.addView(view);
+//                }
+//
+//            }
 
             scrollView.setVisibility(View.VISIBLE);
             mShimmerViewContainer.setVisibility(View.GONE);
             mShimmerViewContainer.stopShimmer();
 
-            recyclerView.setAdapter(new ItemsAdapter(activity, order, "detail"));
+            recyclerView.setAdapter(new ItemsAdapter(activity, itemsInOrderTracker, "detail"));
             relativeLyt.setVisibility(View.VISIBLE);
 
         } catch (Exception e) {
@@ -581,7 +578,7 @@ public class TrackerDetailFragment extends Fragment {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         params.weight = 1.0f;
 
-        status = status.equalsIgnoreCase(Constant.AWAITING_PAYMENT) ? activity.getString(R.string.awaiting_payment) : status.equalsIgnoreCase("received") ? activity.getString(R.string.order_received) : status.equalsIgnoreCase("processed") ? activity.getString(R.string.order_processed) : status.equalsIgnoreCase("shipped") ? activity.getString(R.string.order_shipped) : status.equalsIgnoreCase("ready_to_pickup") ? activity.getString(R.string.order_ready_to_pickup) : status.equalsIgnoreCase("delivered") ? (order.getLocal_pickup().equals("1") ? activity.getString(R.string.order_picked_up) : activity.getString(R.string.order_delivered)) : status.equalsIgnoreCase("cancelled") ? activity.getString(R.string.order_cancel_) : activity.getString(R.string.order_returned);
+        status = status.equalsIgnoreCase(Constant.AWAITING_PAYMENT) ? activity.getString(R.string.awaiting_payment) : status.equalsIgnoreCase("received") ? activity.getString(R.string.order_received) : status.equalsIgnoreCase("processed") ? activity.getString(R.string.order_processed) : status.equalsIgnoreCase("shipped") ? activity.getString(R.string.order_shipped) : status.equalsIgnoreCase("ready_to_pickup") ? activity.getString(R.string.order_ready_to_pickup) : status.equalsIgnoreCase("delivered") ? (itemsInOrderTracker.getCategory().getLocal_pickup().equals("1") ? activity.getString(R.string.order_picked_up) : activity.getString(R.string.order_delivered)) : status.equalsIgnoreCase("cancelled") ? activity.getString(R.string.order_cancel_) : activity.getString(R.string.order_returned);
         LinearLayout layout = new LinearLayout(activity);
         layout.setLayoutParams(params);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -638,7 +635,7 @@ public class TrackerDetailFragment extends Fragment {
             MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
             builder.addFormDataPart(Constant.AccessKey, Constant.AccessKeyVal);
             builder.addFormDataPart(Constant.UPLOAD_BANK_TRANSFER_ATTACHMENT, Constant.GetVal);
-            builder.addFormDataPart(Constant.ORDER_ID, order.getId().toString());
+            builder.addFormDataPart(Constant.ORDER_ID, itemsInOrderTracker.getCategory().getId().toString());
 
             for (int i = 0; i < mAlbumFiles.size(); i++) {
                 File file = new File(mAlbumFiles.get(i).getPath());

@@ -39,8 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import wrteam.ecart.shop.R;
-import wrteam.ecart.shop.fragment.AddressListFragment;
-import wrteam.ecart.shop.fragment.CartFragment;
+//import wrteam.ecart.shop.fragment.CartFragment;
 import wrteam.ecart.shop.fragment.CategoryFragment;
 import wrteam.ecart.shop.fragment.DrawerFragment;
 import wrteam.ecart.shop.fragment.FavoriteFragment;
@@ -51,13 +50,12 @@ import wrteam.ecart.shop.fragment.ProductListFragment;
 import wrteam.ecart.shop.fragment.SubCategoryFragment;
 import wrteam.ecart.shop.fragment.TrackOrderFragment;
 import wrteam.ecart.shop.fragment.TrackerDetailFragment;
-import wrteam.ecart.shop.fragment.WalletTransactionFragment;
 import wrteam.ecart.shop.helper.ApiConfig;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.DatabaseHelper;
 import wrteam.ecart.shop.helper.Session;
 
-public class MainActivity extends AppCompatActivity implements PaymentResultListener, PaytmPaymentTransactionCallback {
+public class MainActivity extends AppCompatActivity{
 
     static final String TAG = "MAIN ACTIVITY";
     @SuppressLint("StaticFieldLeak")
@@ -192,16 +190,16 @@ public class MainActivity extends AppCompatActivity implements PaymentResultList
         });
 
         switch (from) {
-            case "checkout":
-                bottomNavigationView.setVisibility(View.GONE);
-                ApiConfig.getCartItemCount(activity, session);
-                Fragment fragment = new AddressListFragment();
-                Bundle bundle00 = new Bundle();
-                bundle00.putString(Constant.FROM, "login");
-                bundle00.putDouble("total", Double.parseDouble(ApiConfig.StringFormat("" + Constant.FLOAT_TOTAL_AMOUNT)));
-                fragment.setArguments(bundle00);
-                fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
-                break;
+//            case "checkout":
+//                bottomNavigationView.setVisibility(View.GONE);
+//                ApiConfig.getCartItemCount(activity, session);
+//                Fragment fragment = new AddressListFragment();
+//                Bundle bundle00 = new Bundle();
+//                bundle00.putString(Constant.FROM, "login");
+//                bundle00.putDouble("total", Double.parseDouble(ApiConfig.StringFormat("" + Constant.FLOAT_TOTAL_AMOUNT)));
+//                fragment.setArguments(bundle00);
+//                fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
+//                break;
             case "share":
                 Fragment fragment0 = new ProductDetailFragment();
                 Bundle bundle0 = new Bundle();
@@ -243,9 +241,9 @@ public class MainActivity extends AppCompatActivity implements PaymentResultList
             case "payment_success":
                 fm.beginTransaction().add(R.id.container, new OrderPlacedFragment()).addToBackStack(null).commit();
                 break;
-            case "wallet":
-                fm.beginTransaction().add(R.id.container, new WalletTransactionFragment()).addToBackStack(null).commit();
-                break;
+//            case "wallet":
+//                fm.beginTransaction().add(R.id.container, new WalletTransactionFragment()).addToBackStack(null).commit();
+//                break;
         }
 
         fm.addOnBackStackChangedListener(() -> {
@@ -321,7 +319,7 @@ public class MainActivity extends AppCompatActivity implements PaymentResultList
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.toolbar_cart) {
-            MainActivity.fm.beginTransaction().add(R.id.container, new CartFragment()).addToBackStack(null).commit();
+            //MainActivity.fm.beginTransaction().add(R.id.container, new CartFragment()).addToBackStack(null).commit();
         } else if (id == R.id.toolbar_search) {
             Fragment fragment = new ProductListFragment();
             Bundle bundle = new Bundle();
@@ -404,27 +402,6 @@ public class MainActivity extends AppCompatActivity implements PaymentResultList
         }, activity, Constant.GET_ALL_PRODUCTS_URL, params, false);
     }
 
-    @Override
-    public void onPaymentSuccess(String razorpayPaymentID) {
-        try {
-            WalletTransactionFragment.payFromWallet = false;
-            new WalletTransactionFragment().AddWalletBalance(activity, new Session(activity), WalletTransactionFragment.amount, WalletTransactionFragment.msg);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.d(TAG, "onPaymentSuccess  ", e);
-        }
-    }
-
-    @Override
-    public void onPaymentError(int code, String response) {
-        try {
-            Toast.makeText(activity, getString(R.string.order_cancel), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.d(TAG, "onPaymentError  ", e);
-        }
-    }
 
 
     @Override
@@ -433,38 +410,5 @@ public class MainActivity extends AppCompatActivity implements PaymentResultList
         super.onPause();
     }
 
-    @Override
-    public void onTransactionResponse(Bundle bundle) {
 
-    }
-
-    @Override
-    public void networkNotAvailable() {
-        Toast.makeText(activity, "Network error", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void clientAuthenticationFailed(String s) {
-        Toast.makeText(activity, s, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void someUIErrorOccurred(String s) {
-        Toast.makeText(activity, s, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onErrorLoadingWebPage(int i, String s, String s1) {
-        Toast.makeText(activity, s, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onBackPressedCancelTransaction() {
-        Toast.makeText(activity, "Back Pressed", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onTransactionCancel(String s, Bundle bundle) {
-        Toast.makeText(activity, s + bundle.toString(), Toast.LENGTH_LONG).show();
-    }
 }

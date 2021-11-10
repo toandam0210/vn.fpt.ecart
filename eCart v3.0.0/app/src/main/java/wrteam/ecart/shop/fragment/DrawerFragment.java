@@ -149,31 +149,31 @@ public class DrawerFragment extends Fragment {
             startActivity(intent);
         });
 
-        tvMenuCart.setOnClickListener(v -> {
-            fragment = new CartFragment();
-            bundle = new Bundle();
-            bundle.putString(Constant.FROM, "mainActivity");
-            fragment.setArguments(bundle);
-            MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
-        });
+//        tvMenuCart.setOnClickListener(v -> {
+//            fragment = new CartFragment();
+//            bundle = new Bundle();
+//            bundle.putString(Constant.FROM, "mainActivity");
+//            fragment.setArguments(bundle);
+//            MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
+//        });
 
-        tvMenuNotification.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new NotificationFragment()).addToBackStack(null).commit());
+       // tvMenuNotification.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new NotificationFragment()).addToBackStack(null).commit());
 
         tvMenuOrders.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new TrackOrderFragment()).addToBackStack(null).commit());
 
-        tvMenuWalletHistory.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new WalletTransactionFragment()).addToBackStack(null).commit());
+//        tvMenuWalletHistory.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new WalletTransactionFragment()).addToBackStack(null).commit());
 
         tvMenuTransactionHistory.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new TransactionFragment()).addToBackStack(null).commit());
 
         tvMenuChangePassword.setOnClickListener(v -> OpenBottomDialog(activity));
 
-        tvMenuManageAddresses.setOnClickListener(v -> {
-            fragment = new AddressListFragment();
-            bundle = new Bundle();
-            bundle.putString(Constant.FROM, "MainActivity");
-            fragment.setArguments(bundle);
-            MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
-        });
+//        tvMenuManageAddresses.setOnClickListener(v -> {
+//            fragment = new AddressListFragment();
+//            bundle = new Bundle();
+//            bundle.putString(Constant.FROM, "MainActivity");
+//            fragment.setArguments(bundle);
+//            MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
+//        });
 
         tvMenuReferEarn.setOnClickListener(v -> {
             if (session.getBoolean(Constant.IS_USER_LOGIN)) {
@@ -215,7 +215,7 @@ public class DrawerFragment extends Fragment {
             startActivity(Intent.createChooser(shareIntent, getString(R.string.share_via)));
         });
 
-        tvMenuFAQ.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new FaqFragment()).addToBackStack(null).commit());
+       // tvMenuFAQ.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new FaqFragment()).addToBackStack(null).commit());
 
         tvMenuTermsConditions.setOnClickListener(v -> {
             fragment = new WebViewFragment();

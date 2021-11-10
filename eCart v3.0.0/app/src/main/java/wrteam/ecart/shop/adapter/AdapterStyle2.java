@@ -25,9 +25,13 @@ import java.util.List;
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.fragment.ProductDetailFragment;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.VariantsService;
 import wrteam.ecart.shop.model.Product;
+import wrteam.ecart.shop.model.Variants;
+import wrteam.ecart.shop.model.VariantsInProduct;
 
 /**
  * Created by shree1 on 3/16/2017.
@@ -39,7 +43,7 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
     public final Activity activity;
     final Context context;
     final Session session;
-
+    AppDatabase db;
     public AdapterStyle2(Context context, Activity activity, List<Product> productList) {
         this.context = context;
         this.activity = activity;
@@ -55,10 +59,15 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
     @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull VideoHolder holder, final int position) {
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
+        VariantsService variantsService = db.variantsService();
         try {
             if (productList.size() >= 1) {
                 holder.tvStyle2_1.setText(productList.get(0).getName());
-
+                
+               
+                List<Variants> variants = variantsService.loadVariants(productList.get(0).getId());
+                VariantsInProduct variant = new VariantsInProduct(productList.get(0), variants);
 
                 double price, oPrice;
                 String taxPercentage = "0";
@@ -67,12 +76,12 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                if (productList.get(0).getVariants().get(0).getDiscounted_price().equals("0") || productList.get(0).getVariants().get(0).getDiscounted_price().equals("")) {
+                if (variants.get(0).getDiscounted_price().equals("0") || variants.get(0).getDiscounted_price().equals("")) {
                     holder.tvSubStyle2_1_.setVisibility(View.GONE);
-                    price = ((Float.parseFloat(productList.get(0).getVariants().get(0).getPrice()) + ((Float.parseFloat(productList.get(0).getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
+                    price = ((Float.parseFloat(variants.get(0).getPrice()) + ((Float.parseFloat(variants.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
                 } else {
-                    price = ((Float.parseFloat(productList.get(0).getVariants().get(0).getDiscounted_price()) + ((Float.parseFloat(productList.get(0).getVariants().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    oPrice = (Float.parseFloat(productList.get(0).getVariants().get(0).getPrice()) + ((Float.parseFloat(productList.get(0).getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+                    price = ((Float.parseFloat(variants.get(0).getDiscounted_price()) + ((Float.parseFloat(variants.get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                    oPrice = (Float.parseFloat(variants.get(0).getPrice()) + ((Float.parseFloat(variants.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
 
                     holder.tvSubStyle2_1_.setPaintFlags(holder.tvSubStyle2_1_.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                     holder.tvSubStyle2_1_.setText(new Session(activity).getData(Constant.currency) + ApiConfig.StringFormat("" + oPrice));
@@ -97,7 +106,7 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                     final Bundle bundle = new Bundle();
                     bundle.putString(Constant.FROM, "section");
                     bundle.putInt("variantPosition", 0);
-                    bundle.putString(Constant.ID, productList.get(0).getVariants().get(0).getProduct_id());
+                    bundle.putString(Constant.ID, variants.get(0).getProduct_id());
                     fragment.setArguments(bundle);
                     activity1.getSupportFragmentManager().beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
                 });
@@ -105,7 +114,8 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
 
             if (productList.size() >= 2) {
                 holder.tvStyle2_2.setText(productList.get(1).getName());
-
+                List<Variants> variants = variantsService.loadVariants(productList.get(1).getId());
+                VariantsInProduct variant = new VariantsInProduct(productList.get(1), variants);
                 double price, oPrice;
                 String taxPercentage = "0";
                 try {
@@ -113,12 +123,12 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                if (productList.get(1).getVariants().get(0).getDiscounted_price().equals("0") || productList.get(1).getVariants().get(0).getDiscounted_price().equals("")) {
+                if (variants.get(0).getDiscounted_price().equals("0") || variants.get(0).getDiscounted_price().equals("")) {
                     holder.tvSubStyle2_2_.setVisibility(View.GONE);
-                    price = ((Float.parseFloat(productList.get(1).getVariants().get(0).getPrice()) + ((Float.parseFloat(productList.get(1).getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
+                    price = ((Float.parseFloat(variants.get(0).getPrice()) + ((Float.parseFloat(variants.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
                 } else {
-                    price = ((Float.parseFloat(productList.get(1).getVariants().get(0).getDiscounted_price()) + ((Float.parseFloat(productList.get(1).getVariants().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    oPrice = (Float.parseFloat(productList.get(1).getVariants().get(0).getPrice()) + ((Float.parseFloat(productList.get(1).getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+                    price = ((Float.parseFloat(variants.get(0).getDiscounted_price()) + ((Float.parseFloat(variants.get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                    oPrice = (Float.parseFloat(variants.get(0).getPrice()) + ((Float.parseFloat(variants.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
 
                     holder.tvSubStyle2_2_.setPaintFlags(holder.tvSubStyle2_2_.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                     holder.tvSubStyle2_2_.setText(new Session(activity).getData(Constant.currency) + ApiConfig.StringFormat("" + oPrice));
@@ -143,7 +153,7 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                     final Bundle bundle = new Bundle();
                     bundle.putString(Constant.FROM, "section");
                     bundle.putInt("variantPosition", 0);
-                    bundle.putString(Constant.ID, productList.get(1).getVariants().get(0).getProduct_id());
+                    bundle.putString(Constant.ID, variants.get(0).getProduct_id());
                     fragment.setArguments(bundle);
                     activity1.getSupportFragmentManager().beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
 
@@ -152,7 +162,8 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
 
             if (productList.size() >= 3) {
                 holder.tvStyle2_3.setText(productList.get(2).getName());
-
+                List<Variants> variants = variantsService.loadVariants(productList.get(2).getId());
+                VariantsInProduct variant = new VariantsInProduct(productList.get(2), variants);
                 double price, oPrice;
                 String taxPercentage = "0";
                 try {
@@ -160,12 +171,12 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                if (productList.get(2).getVariants().get(0).getDiscounted_price().equals("0") || productList.get(2).getVariants().get(0).getDiscounted_price().equals("")) {
+                if (variants.get(0).getDiscounted_price().equals("0") || variants.get(0).getDiscounted_price().equals("")) {
                     holder.tvSubStyle2_3_.setVisibility(View.GONE);
-                    price = ((Float.parseFloat(productList.get(2).getVariants().get(0).getPrice()) + ((Float.parseFloat(productList.get(2).getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
+                    price = ((Float.parseFloat(variants.get(0).getPrice()) + ((Float.parseFloat(variants.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
                 } else {
-                    price = ((Float.parseFloat(productList.get(2).getVariants().get(0).getDiscounted_price()) + ((Float.parseFloat(productList.get(2).getVariants().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                    oPrice = (Float.parseFloat(productList.get(2).getVariants().get(0).getPrice()) + ((Float.parseFloat(productList.get(2).getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+                    price = ((Float.parseFloat(variants.get(0).getDiscounted_price()) + ((Float.parseFloat(variants.get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                    oPrice = (Float.parseFloat(variants.get(0).getPrice()) + ((Float.parseFloat(variants.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
 
                     holder.tvSubStyle2_3_.setPaintFlags(holder.tvSubStyle2_3_.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                     holder.tvSubStyle2_3_.setText(new Session(activity).getData(Constant.currency) + ApiConfig.StringFormat("" + oPrice));
@@ -190,7 +201,7 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                     final Bundle bundle = new Bundle();
                     bundle.putString(Constant.FROM, "section");
                     bundle.putInt("variantPosition", 0);
-                    bundle.putString(Constant.ID, productList.get(2).getVariants().get(0).getProduct_id());
+                    bundle.putString(Constant.ID, variants.get(0).getProduct_id());
                     fragment.setArguments(bundle);
                     activity1.getSupportFragmentManager().beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
 

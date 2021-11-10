@@ -7,10 +7,8 @@ import static wrteam.ecart.shop.helper.ApiConfig.GetSettings;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Paint;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -45,10 +43,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,19 +51,16 @@ import java.util.Map;
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.activity.MainActivity;
 import wrteam.ecart.shop.adapter.AdapterStyle1;
-import wrteam.ecart.shop.adapter.ReviewAdapter;
 import wrteam.ecart.shop.adapter.SliderAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
 import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.DatabaseHelper;
 import wrteam.ecart.shop.helper.Session;
-import wrteam.ecart.shop.helper.service.CategoryService;
 import wrteam.ecart.shop.helper.service.ProductService;
 import wrteam.ecart.shop.helper.service.VariantsService;
 import wrteam.ecart.shop.model.Product;
 import wrteam.ecart.shop.model.Review;
-import wrteam.ecart.shop.model.Slider;
 import wrteam.ecart.shop.model.Variants;
 import wrteam.ecart.shop.model.VariantsInProduct;
 
@@ -108,7 +100,7 @@ public class ProductDetailFragment extends Fragment {
     ShimmerFrameLayout mShimmerViewContainer;
     Button btnAddToCart;
     ArrayList<Review> reviewArrayList;
-    ReviewAdapter reviewAdapter;
+    //ReviewAdapter reviewAdapter;
     RatingBar ratingProduct_, ratingProduct;
     TextView tvRatingProductCount, tvRatingCount, tvMoreReview, tvReviewDetail;
     LinearLayout lytProductRatings;
@@ -219,18 +211,18 @@ public class ProductDetailFragment extends Fragment {
 
         tvMore.setOnClickListener(v -> ShowSimilar());
 
-        tvMoreReview.setOnClickListener(v -> {
-            Fragment fragment = new ReviewFragment();
-            Bundle bundle = new Bundle();
-            bundle.putString(Constant.FROM, from);
-            bundle.putString(Constant.ID, id);
-            fragment.setArguments(bundle);
-            MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
-        });
+//        tvMoreReview.setOnClickListener(v -> {
+//            Fragment fragment = new ReviewFragment();
+//            Bundle bundle = new Bundle();
+//            bundle.putString(Constant.FROM, from);
+//            bundle.putString(Constant.ID, id);
+//            fragment.setArguments(bundle);
+//            MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
+//        });
 
         lytSimilar.setOnClickListener(view -> ShowSimilar());
 
-        btnCart.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new CartFragment()).addToBackStack(null).commit());
+        //btnCart.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new CartFragment()).addToBackStack(null).commit());
 
         lytShare.setOnClickListener(view -> {
             String message = Constant.WebsiteUrl + "itemdetail/" + product.getSlug();
@@ -248,7 +240,7 @@ public class ProductDetailFragment extends Fragment {
 
         lytSave.setOnClickListener(view -> {
             if (isLogin) {
-                isFavorite = product.getIs_favorite();
+                isFavorite = product.isIs_favorite();
                 if (ApiConfig.isConnected(activity)) {
                     if (isFavorite) {
                         isFavorite = false;
@@ -417,8 +409,8 @@ public class ProductDetailFragment extends Fragment {
                             Review review = new Gson().fromJson(jsonArrayReviews.getJSONObject(i).toString(), Review.class);
                             reviewArrayList.add(review);
                         }
-                        reviewAdapter = new ReviewAdapter(activity, reviewArrayList);
-                        recyclerViewReview.setAdapter(reviewAdapter);
+//                        reviewAdapter = new ReviewAdapter(activity, reviewArrayList);
+//                        recyclerViewReview.setAdapter(reviewAdapter);
                     } else {
                         lytReview.setVisibility(View.GONE);
                     }
@@ -480,7 +472,7 @@ public class ProductDetailFragment extends Fragment {
             }
 
             if (isLogin) {
-                if (product.getProduct().getIs_favorite()) {
+                if (product.getProduct().isIs_favorite()) {
                     isFavorite = true;
                     imgFav.setImageResource(R.drawable.ic_is_favorite);
                 } else {

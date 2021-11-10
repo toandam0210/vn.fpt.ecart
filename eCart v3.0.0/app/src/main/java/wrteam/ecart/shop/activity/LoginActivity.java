@@ -56,10 +56,13 @@ import java.util.concurrent.TimeUnit;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.DatabaseHelper;
 import wrteam.ecart.shop.helper.Session;
 import wrteam.ecart.shop.helper.Utils;
+import wrteam.ecart.shop.helper.service.UserService;
+import wrteam.ecart.shop.model.User;
 import wrteam.ecart.shop.ui.PinView;
 
 public class LoginActivity extends AppCompatActivity {
@@ -90,6 +93,8 @@ public class LoginActivity extends AppCompatActivity {
     String from, mobile, countryCode;
     ProgressDialog dialog;
     final boolean forMultipleCountryUse = true;
+    AppDatabase db;
+
 
 
     @SuppressLint("SetTextI18n")
@@ -110,6 +115,7 @@ public class LoginActivity extends AppCompatActivity {
         animHide = AnimationUtils.loadAnimation(this, R.anim.view_hide);
 
         from = getIntent().getStringExtra(Constant.FROM);
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
 
         chPrivacy = findViewById(R.id.chPrivacy);
         tvWelcome = findViewById(R.id.tvWelcome);
@@ -231,10 +237,7 @@ public class LoginActivity extends AppCompatActivity {
             lytVerify.setVisibility(View.VISIBLE);
             lytVerify.startAnimation(animShow);
         });
-        btnResetPass.setOnClickListener(v -> {
-            hideKeyboard(activity, v);
-            ResetPassword();
-        });
+
         btnLogin.setOnClickListener(v -> {
             mobile = edtLoginMobile.getText().toString();
             final String password = edtLoginPassword.getText().toString();
@@ -250,31 +253,6 @@ public class LoginActivity extends AppCompatActivity {
                 edtLoginPassword.setError(getString(R.string.enter_pass));
             } else if (ApiConfig.isConnected(activity)) {
                 UserLogin(mobile, password);
-            }
-
-        });
-        btnVerify.setOnClickListener(v -> {
-            if (lytOTP.getVisibility() == View.GONE) {
-                hideKeyboard(activity, v);
-                mobile = edtMobileVerify.getText().toString().trim();
-                countryCode = edtCountryCodePicker.getSelectedCountryCode();
-                if (ApiConfig.CheckValidation(mobile, false, false)) {
-                    edtMobileVerify.requestFocus();
-                    edtMobileVerify.setError(getString(R.string.enter_mobile_no));
-                } else if (ApiConfig.CheckValidation(mobile, false, true)) {
-                    edtMobileVerify.requestFocus();
-                    edtMobileVerify.setError(getString(R.string.enter_valid_mobile_no));
-                } else if (ApiConfig.isConnected(activity)) {
-                    generateOTP();
-                }
-            } else {
-                String OTPText = Objects.requireNonNull(pinViewOTP.getText()).toString().trim();
-                if (ApiConfig.CheckValidation(OTPText, false, false)) {
-                    pinViewOTP.requestFocus();
-                    pinViewOTP.setError(getString(R.string.enter_otp));
-                } else {
-                    OTP_Verification(OTPText);
-                }
             }
 
         });
@@ -304,14 +282,11 @@ public class LoginActivity extends AppCompatActivity {
             } else if (!chPrivacy.isChecked()) {
                 Toast.makeText(activity, getString(R.string.alert_privacy_msg), Toast.LENGTH_LONG).show();
             } else if (ApiConfig.isConnected(activity)) {
-                UserSignUpSubmit(name, email, password);
+                UserSignUpSubmit(name, password);
             }
         });
-        tvResend.setOnClickListener(v -> {
-            resendOTP = true;
-            sentRequest("+" + session.getData(Constant.COUNTRY_CODE) + mobile);
 
-        });
+
         imgVerifyClose.setOnClickListener(v -> {
             lytOTP.setVisibility(View.GONE);
             lytVerify.setVisibility(View.GONE);
@@ -342,205 +317,20 @@ public class LoginActivity extends AppCompatActivity {
             lytWebView.startAnimation(animHide);
         });
 
-        StartFirebaseLogin();
-        PrivacyPolicy();
     }
 
-    public void generateOTP() {
-        dialog = ProgressDialog.show(activity, "", getString(R.string.please_wait), true);
-        session.setData(Constant.COUNTRY_CODE, countryCode);
-        Map<String, String> params = new HashMap<>();
-        params.put(Constant.TYPE, Constant.VERIFY_USER);
-        params.put(Constant.MOBILE, mobile);
-        ApiConfig.RequestToVolley((result, response) -> {
-            if (result) {
-                try {
-                    JSONObject object = new JSONObject(response);
-                    phoneNumber = ("+" + session.getData(Constant.COUNTRY_CODE) + mobile);
-                    if (otpFor.equals("new_user")) {
-                        if (object.getBoolean(Constant.ERROR)) {
-                            dialog.dismiss();
-                            setSnackBar(getString(R.string.alert_register_num1) + getString(R.string.app_name) + getString(R.string.alert_register_num2), getString(R.string.btn_ok),"");
-                        } else {
-                            sentRequest(phoneNumber);
-                        }
-                    } else if (otpFor.equals("exist_user")) {
-                        if (object.getBoolean(Constant.ERROR)) {
-                            Constant.U_ID = object.getString(Constant.ID);
-                            sentRequest(phoneNumber);
-                        } else {
-                            dialog.dismiss();
-                            setSnackBar(getString(R.string.alert_not_register_num1) + getString(R.string.app_name) + getString(R.string.alert_not_register_num2), getString(R.string.btn_ok),"");
-                        }
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-
-                }
-            }
-        }, activity, Constant.RegisterUrl, params, false);
-    }
-
-
-    public void sentRequest(String phoneNumber) {
-        PhoneAuthOptions options = PhoneAuthOptions.newBuilder(auth)
-                .setPhoneNumber(phoneNumber)
-                .setTimeout(60L, TimeUnit.SECONDS)
-                .setActivity(this)
-                .setCallbacks(mCallback)
-                .build();
-
-        PhoneAuthProvider.verifyPhoneNumber(options);
-    }
-
-    void StartFirebaseLogin() {
-        auth = FirebaseAuth.getInstance();
-
-        mCallback = new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-            @Override
-            public void onVerificationCompleted(@NotNull PhoneAuthCredential phoneAuthCredential) {
-                //System.out.println ("====verification complete call  " + phoneAuthCredential.getSmsCode ());
-            }
-
-            @Override
-            public void onVerificationFailed(@NotNull FirebaseException e) {
-                setSnackBar(e.getLocalizedMessage(), getString(R.string.btn_ok),"");
-            }
-
-            @Override
-            public void onCodeSent(@NotNull String s, @NotNull PhoneAuthProvider.ForceResendingToken forceResendingToken) {
-                super.onCodeSent(s, forceResendingToken);
-                dialog.dismiss();
-                firebase_otp = s;
-                pinViewOTP.requestFocus();
-                if (resendOTP) {
-                    Toast.makeText(getApplicationContext(), getString(R.string.otp_resend_alert), Toast.LENGTH_SHORT).show();
-                } else {
-                    edtMobileVerify.setEnabled(false);
-                    edtCountryCodePicker.setCcpClickable(false);
-                    btnVerify.setText(getString(R.string.verify_otp));
-                    lytOTP.setVisibility(View.VISIBLE);
-                    lytOTP.startAnimation(animShow);
-                    new CountDownTimer(120000, 1000) {
-                        @SuppressLint("SetTextI18n")
-                        public void onTick(long millisUntilFinished) {
-                            // Used for formatting digit to be in 2 digits only
-                            NumberFormat f = new DecimalFormat("00");
-                            long min = (millisUntilFinished / 60000) % 60;
-                            long sec = (millisUntilFinished / 1000) % 60;
-                            tvTimer.setText(f.format(min) + ":" + f.format(sec));
-                        }
-
-                        public void onFinish() {
-                            resendOTP = false;
-                            tvTimer.setVisibility(View.GONE);
-                            img.setColorFilter(ContextCompat.getColor(activity, R.color.colorPrimary));
-                            tvResend.setTextColor(ContextCompat.getColor(activity, R.color.colorPrimary));
-
-                            tvResend.setOnClickListener(v -> {
-                                resendOTP = true;
-                                sentRequest("+" + session.getData(Constant.COUNTRY_CODE) + mobile);
-
-                                new CountDownTimer(120000, 1000) {
-                                    @SuppressLint("SetTextI18n")
-                                    public void onTick(long millisUntilFinished) {
-
-                                        tvTimer.setVisibility(View.VISIBLE);
-                                        img.setColorFilter(ContextCompat.getColor(activity, R.color.gray));
-                                        tvResend.setTextColor(ContextCompat.getColor(activity, R.color.gray));
-
-                                        // Used for formatting digit to be in 2 digits only
-                                        NumberFormat f = new DecimalFormat("00");
-                                        long min = (millisUntilFinished / 60000) % 60;
-                                        long sec = (millisUntilFinished / 1000) % 60;
-                                        tvTimer.setText(f.format(min) + ":" + f.format(sec));
-                                    }
-
-                                    public void onFinish() {
-                                        resendOTP = false;
-                                        tvTimer.setVisibility(View.GONE);
-                                        img.setColorFilter(ContextCompat.getColor(activity, R.color.colorPrimary));
-                                        tvResend.setTextColor(ContextCompat.getColor(activity, R.color.colorPrimary));
-
-                                        tvResend.setOnClickListener(v1 -> {
-                                            resendOTP = true;
-                                            sentRequest("+" + session.getData(Constant.COUNTRY_CODE) + mobile);
-                                        });
-                                    }
-                                }.start();
-                            });
-                        }
-                    }.start();
-                }
-            }
-        };
-    }
-
-    public void ResetPassword() {
-
-        String reset_psw = edtResetPass.getText().toString();
-        String reset_c_psw = edtResetCPass.getText().toString();
-
-        if (ApiConfig.CheckValidation(reset_psw, false, false)) {
-            edtResetPass.requestFocus();
-            edtResetPass.setError(getString(R.string.enter_new_pass));
-        } else if (ApiConfig.CheckValidation(reset_c_psw, false, false)) {
-            edtResetCPass.requestFocus();
-            edtResetCPass.setError(getString(R.string.enter_confirm_pass));
-        } else if (!reset_psw.equals(reset_c_psw)) {
-            edtResetCPass.requestFocus();
-            edtResetCPass.setError(getString(R.string.pass_not_match));
-        } else if (ApiConfig.isConnected(activity)) {
-            final Map<String, String> params = new HashMap<>();
-            params.put(Constant.TYPE, Constant.CHANGE_PASSWORD);
-            params.put(Constant.PASSWORD, reset_c_psw);
-            //params.put(Constant.ID, session.getData(Constant.ID));
-            params.put(Constant.ID, Constant.U_ID);
-
-            final AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity);
-            // Setting Dialog Message
-            alertDialog.setTitle(getString(R.string.reset_pass));
-            alertDialog.setMessage(getString(R.string.reset_alert_msg));
-            alertDialog.setCancelable(false);
-            final AlertDialog alertDialog1 = alertDialog.create();
-            // Setting OK Button
-            alertDialog.setPositiveButton(getString(R.string.yes), (dialog, which) -> ApiConfig.RequestToVolley((result, response) -> {
-
-                if (result) {
-                    try {
-                        JSONObject object = new JSONObject(response);
-                        if (!object.getBoolean(Constant.ERROR)) {
-                            setSnackBar(getString(R.string.msg_reset_pass_success), getString(R.string.btn_ok),"reset_pass");
-                        }
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, activity, Constant.RegisterUrl, params, true));
-            alertDialog.setNegativeButton(getString(R.string.no), (dialog, which) -> alertDialog1.dismiss());
-            // Showing Alert Message
-            alertDialog.show();
-        }
-    }
-
-    public void UserLogin(String mobile, String password) {
+    public void UserLogin(String username, String password) {
 
         Map<String, String> params = new HashMap<>();
-        params.put(Constant.MOBILE, mobile);
+        params.put(Constant.USER_NAME, username);
         params.put(Constant.PASSWORD, password);
-        params.put(Constant.FCM_ID, "" + session.getData(Constant.FCM_ID));
         ApiConfig.RequestToVolley((result, response) -> {
 
             //System.out.println ("============login res " + response);
             if (result) {
                 try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    if (!jsonObject.getBoolean(Constant.ERROR)) {
-                        StartMainActivity(jsonObject, password);
-                    }
-                    Toast.makeText(activity, jsonObject.getString(Constant.MESSAGE), Toast.LENGTH_SHORT).show();
-                } catch (JSONException e) {
+                        StartMainActivity(username, password);
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -548,57 +338,10 @@ public class LoginActivity extends AppCompatActivity {
     }
 
 
-    public void setSnackBar(String message, String action, String from) {
-        final Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_INDEFINITE);
-        snackbar.setAction(action, view -> {
-            if (from.equals("reset_pass")) {
-                Intent intent = new Intent(this, LoginActivity.class);
-                startActivity(intent);
-                finish();
-            }
-            snackbar.dismiss();
-        });
-
-        snackbar.setActionTextColor(Color.RED);
-        View snackBarView = snackbar.getView();
-        TextView textView = snackBarView.findViewById(R.id.snackbar_text);
-        textView.setMaxLines(5);
-        snackbar.show();
-    }
-
-    @SuppressLint("SetTextI18n")
-    public void OTP_Verification(String OTPText) {
-        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(firebase_otp, OTPText);
-        auth.signInWithCredential(credential)
-                .addOnCompleteListener(activity, task -> {
-                    if (task.isSuccessful()) {
-                        if (otpFor.equals("new_user")) {
-                            tvMobile.setText("+" + session.getData(Constant.COUNTRY_CODE) + " " + mobile);
-                            lytSignUp.setVisibility(View.VISIBLE);
-                            lytSignUp.startAnimation(animShow);
-                        }
-                        if (otpFor.equals("exist_user")) {
-                            lytResetPass.setVisibility(View.VISIBLE);
-                            lytResetPass.startAnimation(animShow);
-//                            System.out.println("lytResetPass.getVisibility() : " + lytResetPass.getVisibility() + ", " + View.VISIBLE + ", " + View.GONE);
-                        }
-                    } else {
-                        //verification unsuccessful.. display an error message
-                        String message = "Something is wrong, we will fix it soon...";
-                        if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
-                            message = "Invalid code entered...";
-                        }
-                        pinViewOTP.requestFocus();
-                        pinViewOTP.setError(message);
-                    }
-                });
-    }
-
-    public void UserSignUpSubmit(String name, String email, String password) {
+    public void UserSignUpSubmit(String name, String password) {
         Map<String, String> params = new HashMap<>();
         params.put(Constant.TYPE, Constant.REGISTER);
         params.put(Constant.NAME, name);
-        params.put(Constant.EMAIL, email);
         params.put(Constant.PASSWORD, password);
         params.put(Constant.COUNTRY_CODE, session.getData(Constant.COUNTRY_CODE));
         params.put(Constant.MOBILE, mobile);
@@ -608,12 +351,12 @@ public class LoginActivity extends AppCompatActivity {
         ApiConfig.RequestToVolley((result, response) -> {
             if (result) {
                 try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    if (!jsonObject.getBoolean(Constant.ERROR)) {
-                        StartMainActivity(jsonObject, password);
-                    }
-                    Toast.makeText(activity, jsonObject.getString(Constant.MESSAGE), Toast.LENGTH_SHORT).show();
-                } catch (JSONException e) {
+                    UserService userService = db.userService();
+                    User user = new User();
+                    user.setUsername(name);
+                    user.setPassword(password);
+                    userService.insertAll(user);
+                } catch (Exception e) {
                     e.printStackTrace();
 
                 }
@@ -621,31 +364,25 @@ public class LoginActivity extends AppCompatActivity {
         }, activity, Constant.RegisterUrl, params, true);
     }
 
-    public void StartMainActivity(JSONObject jsonObject, String password) {
+    public void StartMainActivity(String username, String password) {
         try {
-            new Session(activity).createUserLoginSession(jsonObject.getString(Constant.PROFILE),
-                    session.getData(Constant.FCM_ID),
-                    jsonObject.getString(Constant.USER_ID),
-                    jsonObject.getString(Constant.NAME),
-                    jsonObject.getString(Constant.EMAIL),
-                    jsonObject.getString(Constant.MOBILE),
-                    password,
-                    jsonObject.getString(Constant.REFERRAL_CODE));
+            UserService userService = db.userService();
+            User user = userService.login(username,password);
 
-            ApiConfig.AddMultipleProductInCart(session, activity, databaseHelper.getCartData());
-            ApiConfig.AddMultipleProductInSaveForLater(session, activity, databaseHelper.getSaveForLaterData());
-            ApiConfig.getCartItemCount(activity, session);
+//            ApiConfig.AddMultipleProductInCart(session, activity, databaseHelper.getCartData());
+//            ApiConfig.AddMultipleProductInSaveForLater(session, activity, databaseHelper.getSaveForLaterData());
+//            ApiConfig.getCartItemCount(activity, session);
 
-            ArrayList<String> favorites = databaseHelper.getFavorite();
-            for (int i = 0; i < favorites.size(); i++) {
-                ApiConfig.AddOrRemoveFavorite(activity, session, favorites.get(i), true);
-            }
+//            ArrayList<String> favorites = databaseHelper.getFavorite();
+//            for (int i = 0; i < favorites.size(); i++) {
+//                ApiConfig.AddOrRemoveFavorite(activity, session, Integer.valueOf(favorites.get(i)), true);
+//            }
 
-            databaseHelper.DeleteAllFavoriteData();
-            databaseHelper.ClearCart();
-            databaseHelper.ClearSaveForLater();
+//            databaseHelper.DeleteAllFavoriteData();
+//            databaseHelper.ClearCart();
+//            databaseHelper.ClearSaveForLater();
 
-            session.setData(Constant.COUNTRY_CODE, jsonObject.getString(Constant.COUNTRY_CODE));
+            session.setData(Constant.USER_ID, String.valueOf(user.getUserId()));
 
             MainActivity.homeClicked = false;
             MainActivity.categoryClicked = false;
@@ -665,7 +402,7 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(intent);
 
             finish();
-        } catch (JSONException e) {
+        } catch (Exception e) {
             e.printStackTrace();
 
         }
@@ -684,83 +421,83 @@ public class LoginActivity extends AppCompatActivity {
         return spannableString;
     }
 
-    public void GetContent(final String type, final String key) {
-        Map<String, String> params = new HashMap<>();
-        params.put(Constant.SETTINGS, Constant.GetVal);
-        params.put(type, Constant.GetVal);
+//    public void GetContent(final String type, final String key) {
+//        Map<String, String> params = new HashMap<>();
+//        params.put(Constant.SETTINGS, Constant.GetVal);
+//        params.put(type, Constant.GetVal);
+//
+//        ApiConfig.RequestToVolley((result, response) -> {
+//            if (result) {
+//                try {
+//                    JSONObject obj = new JSONObject(response);
+//                    if (!obj.getBoolean(Constant.ERROR)) {
+//
+//                        String privacyStr = obj.getString(key);
+//                        webView.setVerticalScrollBarEnabled(true);
+//                        webView.loadDataWithBaseURL("", privacyStr, "text/html", "UTF-8", "");
+//                    } else {
+//                        Toast.makeText(activity, obj.getString(Constant.MESSAGE), Toast.LENGTH_LONG).show();
+//                    }
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }, activity, Constant.SETTING_URL, params, false);
+//    }
 
-        ApiConfig.RequestToVolley((result, response) -> {
-            if (result) {
-                try {
-                    JSONObject obj = new JSONObject(response);
-                    if (!obj.getBoolean(Constant.ERROR)) {
-
-                        String privacyStr = obj.getString(key);
-                        webView.setVerticalScrollBarEnabled(true);
-                        webView.loadDataWithBaseURL("", privacyStr, "text/html", "UTF-8", "");
-                    } else {
-                        Toast.makeText(activity, obj.getString(Constant.MESSAGE), Toast.LENGTH_LONG).show();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }, activity, Constant.SETTING_URL, params, false);
-    }
-
-    public void PrivacyPolicy() {
-        tvPrivacyPolicy.setClickable(true);
-        tvPrivacyPolicy.setMovementMethod(LinkMovementMethod.getInstance());
-
-        String message = getString(R.string.msg_privacy_terms);
-        String s2 = getString(R.string.terms_conditions);
-        String s1 = getString(R.string.privacy_policy);
-        final Spannable wordToSpan = new SpannableString(message);
-
-        wordToSpan.setSpan(new ClickableSpan() {
-            @Override
-            public void onClick(View view) {
-                GetContent(Constant.GET_PRIVACY, "privacy");
-                try {
-                    Thread.sleep(500);
-                    lytWebView.setVisibility(View.VISIBLE);
-                    lytWebView.startAnimation(animShow);
-                } catch (Exception e) {
-                    e.printStackTrace();
-
-                }
-            }
-
-            @Override
-            public void updateDrawState(TextPaint ds) {
-                super.updateDrawState(ds);
-                ds.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
-                ds.isUnderlineText();
-            }
-        }, message.indexOf(s1), message.indexOf(s1) + s1.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        wordToSpan.setSpan(new ClickableSpan() {
-            @Override
-            public void onClick(View view) {
-                GetContent(Constant.GET_TERMS, "terms");
-                try {
-                    Thread.sleep(500);
-                    lytWebView.setVisibility(View.VISIBLE);
-                    lytWebView.startAnimation(animShow);
-                } catch (Exception e) {
-                    e.printStackTrace();
-
-                }
-            }
-
-            @Override
-            public void updateDrawState(TextPaint ds) {
-                super.updateDrawState(ds);
-                ds.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
-                ds.isUnderlineText();
-            }
-        }, message.indexOf(s2), message.indexOf(s2) + s2.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        tvPrivacyPolicy.setText(wordToSpan);
-    }
+//    public void PrivacyPolicy() {
+//        tvPrivacyPolicy.setClickable(true);
+//        tvPrivacyPolicy.setMovementMethod(LinkMovementMethod.getInstance());
+//
+//        String message = getString(R.string.msg_privacy_terms);
+//        String s2 = getString(R.string.terms_conditions);
+//        String s1 = getString(R.string.privacy_policy);
+//        final Spannable wordToSpan = new SpannableString(message);
+//
+//        wordToSpan.setSpan(new ClickableSpan() {
+//            @Override
+//            public void onClick(View view) {
+//                GetContent(Constant.GET_PRIVACY, "privacy");
+//                try {
+//                    Thread.sleep(500);
+//                    lytWebView.setVisibility(View.VISIBLE);
+//                    lytWebView.startAnimation(animShow);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//
+//                }
+//            }
+//
+//            @Override
+//            public void updateDrawState(TextPaint ds) {
+//                super.updateDrawState(ds);
+//                ds.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
+//                ds.isUnderlineText();
+//            }
+//        }, message.indexOf(s1), message.indexOf(s1) + s1.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//        wordToSpan.setSpan(new ClickableSpan() {
+//            @Override
+//            public void onClick(View view) {
+//                GetContent(Constant.GET_TERMS, "terms");
+//                try {
+//                    Thread.sleep(500);
+//                    lytWebView.setVisibility(View.VISIBLE);
+//                    lytWebView.startAnimation(animShow);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//
+//                }
+//            }
+//
+//            @Override
+//            public void updateDrawState(TextPaint ds) {
+//                super.updateDrawState(ds);
+//                ds.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
+//                ds.isUnderlineText();
+//            }
+//        }, message.indexOf(s2), message.indexOf(s2) + s2.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//        tvPrivacyPolicy.setText(wordToSpan);
+//    }
 
     public void hideKeyboard(Activity activity, View root) {
         try {

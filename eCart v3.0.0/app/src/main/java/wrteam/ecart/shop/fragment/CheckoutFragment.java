@@ -27,23 +27,25 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.facebook.shimmer.ShimmerFrameLayout;
-import com.google.gson.Gson;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import wrteam.ecart.shop.R;
-import wrteam.ecart.shop.activity.PaymentActivity;
 import wrteam.ecart.shop.adapter.CheckoutItemListAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.CartItemsService;
+import wrteam.ecart.shop.helper.service.CartService;
 import wrteam.ecart.shop.model.Cart;
+import wrteam.ecart.shop.model.CartItems;
 
 public class CheckoutFragment extends Fragment {
     public static String pCode = "", appliedCode = "", deliveryCharge = "0";
@@ -62,12 +64,13 @@ public class CheckoutFragment extends Fragment {
     Session session;
     Activity activity;
     CheckoutItemListAdapter checkoutItemListAdapter;
-    ArrayList<Cart> carts;
+    List<Cart> listCart;
     float OriginalAmount = 0, DiscountedAmount = 0;
     private ShimmerFrameLayout mShimmerViewContainer;
     String from;
     ArrayList<String> variantIdList, qtyList;
     LinearLayout lytAddress;
+    AppDatabase db;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -95,7 +98,7 @@ public class CheckoutFragment extends Fragment {
         mShimmerViewContainer = root.findViewById(R.id.mShimmerViewContainer);
         lytAddress = root.findViewById(R.id.lytAddress);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
         assert getArguments() != null;
         from = getArguments().getString("from");
         lytAddress.setVisibility(from.equals("cart") ? View.GONE : View.VISIBLE);
@@ -112,23 +115,23 @@ public class CheckoutFragment extends Fragment {
 
         Constant.FLOAT_TOTAL_AMOUNT = 0;
 
-        tvConfirmOrder.setOnClickListener(view -> {
-            if (subtotal != 0 && Constant.FLOAT_TOTAL_AMOUNT != 0) {
-                PaymentActivity.paymentMethod = "";
-                PaymentActivity.deliveryTime = "";
-                PaymentActivity.deliveryDay = "";
-                assert getArguments() != null;
-                startActivity(new Intent(activity, PaymentActivity.class).putExtra("subtotal", Double.parseDouble("" + subtotal))
-                        .putExtra("total", Double.parseDouble("" + Constant.FLOAT_TOTAL_AMOUNT))
-                        .putExtra("pCodeDiscount", Double.parseDouble("" + pCodeDiscount))
-                        .putExtra("pCode", pCode)
-                        .putExtra("variantIdList", variantIdList)
-                        .putExtra("qtyList", qtyList)
-                        .putExtra(Constant.FROM, from)
-                        .putExtra("address", getArguments().getString("address"))
-                );
-            }
-        });
+//        tvConfirmOrder.setOnClickListener(view -> {
+//            if (subtotal != 0 && Constant.FLOAT_TOTAL_AMOUNT != 0) {
+//                PaymentActivity.paymentMethod = "";
+//                PaymentActivity.deliveryTime = "";
+//                PaymentActivity.deliveryDay = "";
+//                assert getArguments() != null;
+//                startActivity(new Intent(activity, PaymentActivity.class).putExtra("subtotal", Double.parseDouble("" + subtotal))
+//                        .putExtra("total", Double.parseDouble("" + Constant.FLOAT_TOTAL_AMOUNT))
+//                        .putExtra("pCodeDiscount", Double.parseDouble("" + pCodeDiscount))
+//                        .putExtra("pCode", pCode)
+//                        .putExtra("variantIdList", variantIdList)
+//                        .putExtra("qtyList", qtyList)
+//                        .putExtra(Constant.FROM, from)
+//                        .putExtra("address", getArguments().getString("address"))
+//                );
+//            }
+//        });
 
         imgRefresh.setOnClickListener(view -> {
             if (isApplied) {
@@ -156,7 +159,12 @@ public class CheckoutFragment extends Fragment {
 
 
     void getCartData() {
-        carts = new ArrayList<>();
+        listCart = new ArrayList<>();
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
+        CartService cartService = db.cartService();
+        CartItemsService cartItemsService = db.cartItemsService();
+        Cart carts = cartService.loadCartById(Integer.valueOf(session.getData(Constant.USER_ID)), false);
+        List<CartItems> orderItems = cartItemsService.loadCartItem(carts.getId());
         if (from.equals("login")) {
             recyclerView.setVisibility(View.GONE);
             mShimmerViewContainer.setVisibility(View.VISIBLE);
@@ -171,38 +179,33 @@ public class CheckoutFragment extends Fragment {
             ApiConfig.RequestToVolley((result, response) -> {
                 if (result) {
                     try {
-                        JSONObject jsonObject = new JSONObject(response);
-                        JSONArray jsonArray = jsonObject.getJSONArray(Constant.DATA);
-                        Gson gson = new Gson();
-
-                        for (int i = 0; i < jsonArray.length(); i++) {
+                        for (int i = 0; i < orderItems.size(); i++) {
                             try {
-                                Cart cart = gson.fromJson(String.valueOf(jsonArray.getJSONObject(i)), Cart.class);
-
+                                Cart cart = carts;
                                 variantIdList.add(cart.getProduct_variant_id());
                                 qtyList.add(cart.getQty());
 
                                 float price;
                                 int qty = Integer.parseInt(cart.getQty());
-                                String taxPercentage = cart.getItems().get(0).getTax_percentage();
+                                String taxPercentage = orderItems.get(0).getTax_percentage();
 
-                                if (cart.getItems().get(0).getDiscounted_price().equals("0") || cart.getItems().get(0).getDiscounted_price().equals("")) {
-                                    price = ((Float.parseFloat(cart.getItems().get(0).getPrice()) + ((Float.parseFloat(cart.getItems().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
+                                if (orderItems.get(0).getDiscounted_price().equals("0") || orderItems.get(0).getDiscounted_price().equals("")) {
+                                    price = ((Float.parseFloat(orderItems.get(0).getPrice()) + ((Float.parseFloat(orderItems.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
                                 } else {
-                                    OriginalAmount += (Float.parseFloat(cart.getItems().get(0).getPrice()) * qty);
-                                    DiscountedAmount += (Float.parseFloat(cart.getItems().get(0).getDiscounted_price()) * qty);
+                                    OriginalAmount += (Float.parseFloat(orderItems.get(0).getPrice()) * qty);
+                                    DiscountedAmount += (Float.parseFloat(orderItems.get(0).getDiscounted_price()) * qty);
 
-                                    price = ((Float.parseFloat(cart.getItems().get(0).getDiscounted_price()) + ((Float.parseFloat(cart.getItems().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                                    price = ((Float.parseFloat(orderItems.get(0).getDiscounted_price()) + ((Float.parseFloat(orderItems.get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
                                 }
 
                                 Constant.FLOAT_TOTAL_AMOUNT += (price * qty);
 
-                                carts.add(cart);
+                                listCart.add(cart);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }
-                    } catch (JSONException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                         confirmLyt.setVisibility(View.VISIBLE);
                         mShimmerViewContainer.stopShimmer();
@@ -214,25 +217,25 @@ public class CheckoutFragment extends Fragment {
         } else {
             try {
                 assert getArguments() != null;
-                carts = (ArrayList<Cart>) requireArguments().getSerializable("data");
+                listCart = (ArrayList<Cart>) requireArguments().getSerializable("data");
                 assert getArguments() != null;
                 variantIdList = getArguments().getStringArrayList("variantIdList");
                 qtyList = getArguments().getStringArrayList("qtyList");
                 {
-                    for (int i = 0; i < carts.size(); i++) {
+                    for (int i = 0; i < listCart.size(); i++) {
                         try {
-                            Cart cart = carts.get(i);
+                            Cart cart = listCart.get(i);
                             float price;
                             int qty = Integer.parseInt(cart.getQty());
-                            String taxPercentage = cart.getItems().get(0).getTax_percentage();
+                            String taxPercentage = orderItems.get(0).getTax_percentage();
 
-                            if (cart.getItems().get(0).getDiscounted_price().equals("0") || cart.getItems().get(0).getDiscounted_price().equals("")) {
-                                price = ((Float.parseFloat(cart.getItems().get(0).getPrice()) + ((Float.parseFloat(cart.getItems().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
+                            if (orderItems.get(0).getDiscounted_price().equals("0") || orderItems.get(0).getDiscounted_price().equals("")) {
+                                price = ((Float.parseFloat(orderItems.get(0).getPrice()) + ((Float.parseFloat(orderItems.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
                             } else {
-                                OriginalAmount += (Float.parseFloat(cart.getItems().get(0).getPrice()) * qty);
-                                DiscountedAmount += (Float.parseFloat(cart.getItems().get(0).getDiscounted_price()) * qty);
+                                OriginalAmount += (Float.parseFloat(orderItems.get(0).getPrice()) * qty);
+                                DiscountedAmount += (Float.parseFloat(orderItems.get(0).getDiscounted_price()) * qty);
 
-                                price = ((Float.parseFloat(cart.getItems().get(0).getDiscounted_price()) + ((Float.parseFloat(cart.getItems().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                                price = ((Float.parseFloat(orderItems.get(0).getDiscounted_price()) + ((Float.parseFloat(orderItems.get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
                             }
                             Constant.FLOAT_TOTAL_AMOUNT += (price * qty);
                         } catch (Exception e) {
@@ -246,7 +249,7 @@ public class CheckoutFragment extends Fragment {
         }
         SetDataTotal();
 
-        checkoutItemListAdapter = new CheckoutItemListAdapter(activity, carts);
+        checkoutItemListAdapter = new CheckoutItemListAdapter(activity, listCart);
         recyclerView.setAdapter(checkoutItemListAdapter);
     }
 

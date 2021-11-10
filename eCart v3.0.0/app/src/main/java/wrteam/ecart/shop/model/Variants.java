@@ -30,7 +30,7 @@ public class Variants implements Serializable {
     @ColumnInfo
     String cart_count;
     @ColumnInfo
-    String is_flash_sales;
+    boolean is_flash_sales;
 
     public Integer getId() {
         return id;
@@ -60,6 +60,10 @@ public class Variants implements Serializable {
         return measurement;
     }
 
+    public void setMeasurement(String measurement) {
+        this.measurement = measurement;
+    }
+
     public String getPrice() {
         return price;
     }
@@ -72,16 +76,32 @@ public class Variants implements Serializable {
         return discounted_price;
     }
 
+    public void setDiscounted_price(String discounted_price) {
+        this.discounted_price = discounted_price;
+    }
+
     public String getServe_for() {
         return serve_for;
+    }
+
+    public void setServe_for(String serve_for) {
+        this.serve_for = serve_for;
     }
 
     public String getStock() {
         return stock;
     }
 
+    public void setStock(String stock) {
+        this.stock = stock;
+    }
+
     public String getMeasurement_unit_name() {
         return measurement_unit_name;
+    }
+
+    public void setMeasurement_unit_name(String measurement_unit_name) {
+        this.measurement_unit_name = measurement_unit_name;
     }
 
     public String getCart_count() {
@@ -92,12 +112,11 @@ public class Variants implements Serializable {
         this.cart_count = cart_count;
     }
 
-    public String getIs_flash_sales() {
+    public boolean isIs_flash_sales() {
         return is_flash_sales;
     }
 
-    public void setIs_flash_sales(String is_flash_sales) {
+    public void setIs_flash_sales(boolean is_flash_sales) {
         this.is_flash_sales = is_flash_sales;
     }
-
 }

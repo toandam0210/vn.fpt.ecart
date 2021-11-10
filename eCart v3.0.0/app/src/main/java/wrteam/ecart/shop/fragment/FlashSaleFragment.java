@@ -66,7 +66,7 @@ public class FlashSaleFragment extends Fragment {
         FlashSaleFragment fragment = new FlashSaleFragment();
         Bundle args = new Bundle();
         args.putString("name", slider.getName());
-        args.putString("typeId", slider.getType_id());
+        args.putInt("typeId", slider.getType_id());
         args.putString("image", slider.getImage());
         args.putString("type", slider.getType());
         fragment.setArguments(args);

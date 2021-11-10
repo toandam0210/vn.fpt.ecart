@@ -25,9 +25,13 @@ import java.util.List;
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.fragment.ProductDetailFragment;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.VariantsService;
 import wrteam.ecart.shop.model.Product;
+import wrteam.ecart.shop.model.Variants;
+import wrteam.ecart.shop.model.VariantsInProduct;
 
 /**
  * Created by shree1 on 3/16/2017.
@@ -39,6 +43,7 @@ public class AdapterStyle1 extends RecyclerView.Adapter<AdapterStyle1.VideoHolde
     public final Activity activity;
     public final int itemResource;
     final Context context;
+    AppDatabase db;
 
     public AdapterStyle1(Context context, Activity activity, List<Product> productList, int itemResource) {
         this.context = context;
@@ -57,6 +62,10 @@ public class AdapterStyle1 extends RecyclerView.Adapter<AdapterStyle1.VideoHolde
     @Override
     public void onBindViewHolder(@NonNull VideoHolder holder, final int position) {
         final Product product = productList.get(position);
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
+        VariantsService variantsService = db.variantsService();
+        List<Variants> variants = variantsService.loadVariants(product.getId());
+        VariantsInProduct variant = new VariantsInProduct(product, variants);
         try {
 
             Picasso.get()
@@ -75,12 +84,12 @@ public class AdapterStyle1 extends RecyclerView.Adapter<AdapterStyle1.VideoHolde
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            if (product.getVariants().get(0).getDiscounted_price().equals("0") || product.getVariants().get(0).getDiscounted_price().equals("")) {
+            if (variants.get(0).getDiscounted_price().equals("0") || variants.get(0).getDiscounted_price().equals("")) {
                 holder.tvDPrice.setVisibility(View.GONE);
-                price = ((Float.parseFloat(product.getVariants().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
+                price = ((Float.parseFloat(variants.get(0).getPrice()) + ((Float.parseFloat(variants.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100)));
             } else {
-                price = ((Float.parseFloat(product.getVariants().get(0).getDiscounted_price()) + ((Float.parseFloat(product.getVariants().get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
-                oPrice = (Float.parseFloat(product.getVariants().get(0).getPrice()) + ((Float.parseFloat(product.getVariants().get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
+                price = ((Float.parseFloat(variants.get(0).getDiscounted_price()) + ((Float.parseFloat(variants.get(0).getDiscounted_price()) * Float.parseFloat(taxPercentage)) / 100)));
+                oPrice = (Float.parseFloat(variants.get(0).getPrice()) + ((Float.parseFloat(variants.get(0).getPrice()) * Float.parseFloat(taxPercentage)) / 100));
 
                 holder.tvDPrice.setPaintFlags(holder.tvDPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                 holder.tvDPrice.setText(new Session(activity).getData(Constant.currency) + ApiConfig.StringFormat("" + oPrice));
@@ -99,7 +108,7 @@ public class AdapterStyle1 extends RecyclerView.Adapter<AdapterStyle1.VideoHolde
             AppCompatActivity activity1 = (AppCompatActivity) context;
             Fragment fragment = new ProductDetailFragment();
             Bundle bundle = new Bundle();
-            bundle.putString(Constant.ID, product.getVariants().get(0).getProduct_id());
+            bundle.putString(Constant.ID, variants.get(0).getProduct_id());
             bundle.putString(Constant.FROM, "section");
             bundle.putInt("variantPosition", 0);
             fragment.setArguments(bundle);

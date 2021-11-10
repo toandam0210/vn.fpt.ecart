@@ -37,6 +37,10 @@ public class FlashSale implements Serializable {
         return flash_sales_id;
     }
 
+    public void setFlash_sales_id(String flash_sales_id) {
+        this.flash_sales_id = flash_sales_id;
+    }
+
     public String getProduct_id() {
         return product_id;
     }
@@ -57,12 +61,24 @@ public class FlashSale implements Serializable {
         return discounted_price;
     }
 
+    public void setDiscounted_price(String discounted_price) {
+        this.discounted_price = discounted_price;
+    }
+
     public String getStart_date() {
         return start_date;
     }
 
+    public void setStart_date(String start_date) {
+        this.start_date = start_date;
+    }
+
     public String getEnd_date() {
         return end_date;
+    }
+
+    public void setEnd_date(String end_date) {
+        this.end_date = end_date;
     }
 
     public String getStatus() {

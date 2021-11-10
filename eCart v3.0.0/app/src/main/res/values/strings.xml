@@ -466,4 +466,6 @@
     <string name="bank_name_copied">Bank name copied!</string>
     <string name="bank_ifsc_code_copied">Bank IFSC code copied!</string>
     <string name="extra_note_copied">Extra note copied!</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

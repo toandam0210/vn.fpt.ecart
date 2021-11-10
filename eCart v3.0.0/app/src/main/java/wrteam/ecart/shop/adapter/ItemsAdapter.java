@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -43,23 +44,26 @@ import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.activity.MainActivity;
 import wrteam.ecart.shop.fragment.TrackerDetailFragment;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.model.ItemsInOrderTracker;
 import wrteam.ecart.shop.model.OrderItem;
 import wrteam.ecart.shop.model.OrderTracker;
 
 public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> {
 
     final Activity activity;
-    final ArrayList<OrderItem> orderTrackerArrayList;
-    final OrderTracker orderTracker;
+    final List<OrderItem> itemsInOrderTrackers;
+    final ItemsInOrderTracker itemsInOrderTracker;
     final Session session;
     final String from;
+    AppDatabase db;
 
-    public ItemsAdapter(Activity activity, OrderTracker orderTracker, String from) {
+    public ItemsAdapter(Activity activity, ItemsInOrderTracker itemsInOrderTracker, String from) {
         this.activity = activity;
-        this.orderTracker = orderTracker;
-        this.orderTrackerArrayList = orderTracker.getItems();
+        this.itemsInOrderTracker = itemsInOrderTracker;
+        this.itemsInOrderTrackers = itemsInOrderTracker.getOrderItems();
         this.from = from;
         session = new Session(activity);
     }
@@ -76,17 +80,18 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
         try {
 
-            final OrderItem orderItem = orderTrackerArrayList.get(position);
+            final OrderItem orderItem = itemsInOrderTrackers.get(position);
+            db = AppDatabase.getDbInstance(activity.getApplicationContext());
 
             String payType;
-            if (orderTracker.getPayment_method().equalsIgnoreCase("cod"))
+            if (itemsInOrderTracker.getCategory().getPayment_method().equalsIgnoreCase("cod"))
                 payType = activity.getResources().getString(R.string.cod);
             else
-                payType = orderTracker.getPayment_method();
-            String activeStatus = orderTracker.getActive_status().substring(0, 1).toUpperCase() + orderTracker.getActive_status().substring(1).toLowerCase();
+                payType = itemsInOrderTracker.getCategory().getPayment_method();
+            String activeStatus = itemsInOrderTracker.getCategory().getActive_status().substring(0, 1).toUpperCase() + itemsInOrderTracker.getCategory().getActive_status().substring(1).toLowerCase();
             holder.tvQuantity.setText(orderItem.getQuantity());
 
-            String taxPercentage = orderTracker.getTax_percentage();
+            String taxPercentage = itemsInOrderTracker.getCategory().getTax_percentage();
             double price;
 
             if (orderItem.getDiscounted_price().equals("0") || orderItem.getDiscounted_price().equals("")) {
@@ -101,7 +106,7 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
             if (activeStatus.equalsIgnoreCase(Constant.AWAITING_PAYMENT)) {
                 holder.tvStatus.setText(activity.getString(R.string.awaiting_payment));
             }
-            holder.tvStatusDate.setText(orderTracker.getDate_added());
+            holder.tvStatusDate.setText(itemsInOrderTracker.getCategory().getDate_added());
             holder.tvName.setText(orderItem.getName() + "(" + orderItem.getMeasurement() + orderItem.getUnit() + ")");
 
             Picasso.get().
@@ -116,19 +121,19 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
                 Fragment fragment = new TrackerDetailFragment();
                 Bundle bundle = new Bundle();
                 bundle.putString("id", "");
-                bundle.putSerializable("model", orderTracker);
+                bundle.putSerializable("model", itemsInOrderTracker.getCategory());
                 fragment.setArguments(bundle);
                 MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
             });
 
-            holder.btnCancel.setOnClickListener(view -> updateOrderStatus(activity, orderTracker, Constant.CANCELLED, holder, from));
+            holder.btnCancel.setOnClickListener(view -> updateOrderStatus(activity, itemsInOrderTracker.getCategory(), Constant.CANCELLED, holder, from));
 
             holder.btnReturn.setOnClickListener(view -> {
                 @SuppressLint("SimpleDateFormat") SimpleDateFormat myFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
                 Date date = new Date();
                 //System.out.println (myFormat.format (date));
-                String inputString1 = orderTracker.getDate_added();
+                String inputString1 = itemsInOrderTracker.getCategory().getDate_added();
                 String inputString2 = myFormat.format(date);
                 try {
                     Date date1 = myFormat.parse(inputString1);
@@ -139,7 +144,7 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
                     // System.out.println("Days: "+TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
 
                     if (TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) <= Integer.parseInt(new Session(activity).getData(Constant.max_product_return_days))) {
-                        updateOrderStatus(activity, orderTracker, Constant.RETURNED, holder, from);
+                        updateOrderStatus(activity, itemsInOrderTracker.getCategory(), Constant.RETURNED, holder, from);
 
                     } else {
                         final Snackbar snackbar = Snackbar.make(activity.findViewById(android.R.id.content), activity.getResources().getString(R.string.product_return) + Integer.parseInt(new Session(activity).getData(Constant.max_product_return_days)) + activity.getString(R.string.day_max_limit), Snackbar.LENGTH_INDEFINITE);
@@ -156,7 +161,7 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
                 }
             });
             if (from.equals("detail")) {
-                if (orderTracker.getActive_status().equalsIgnoreCase("delivered") && session.getData(Constant.ratings).equals("1")) {
+                if (itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("delivered") && session.getData(Constant.ratings).equals("1")) {
                     holder.lytRatings.setVisibility(View.VISIBLE);
                     if (orderItem.isReview_status()) {
                         holder.ratingProduct.setRating(Float.parseFloat(orderItem.getRate()));
@@ -170,35 +175,35 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
 
                 holder.tvAddUpdateReview.setOnClickListener(v -> AddUpdateReview(holder, orderItem, holder.ratingProduct.getRating(), orderItem.getReview(), Boolean.parseBoolean(orderItem.getReturn_status()), orderItem.getProduct_id()));
 
-                if (orderTracker.getActive_status().equalsIgnoreCase("cancelled")) {
+                if (itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("cancelled")) {
                     holder.tvStatus.setTextColor(Color.RED);
                     holder.btnCancel.setVisibility(View.GONE);
-                } else if (orderTracker.getActive_status().equalsIgnoreCase("delivered")) {
+                } else if (itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("delivered")) {
                     holder.btnCancel.setVisibility(View.GONE);
                     if (orderItem.getReturn_status().equalsIgnoreCase("1")) {
                         holder.btnReturn.setVisibility(View.VISIBLE);
                     } else {
                         holder.btnReturn.setVisibility(View.GONE);
                     }
-                } else if (orderTracker.getActive_status().equalsIgnoreCase("returned")) {
+                } else if (itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("returned")) {
                     holder.btnCancel.setVisibility(View.GONE);
                     holder.btnReturn.setVisibility(View.GONE);
                 } else {
                     if (orderItem.getCancelable_status().equalsIgnoreCase("1")) {
                         if (orderItem.getTill_status().equalsIgnoreCase("received")) {
-                            if (orderTracker.getActive_status().equalsIgnoreCase("received")) {
+                            if (itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("received")) {
                                 holder.btnCancel.setVisibility(View.VISIBLE);
                             } else {
                                 holder.btnCancel.setVisibility(View.GONE);
                             }
                         } else if (orderItem.getTill_status().equalsIgnoreCase("processed")) {
-                            if (orderTracker.getActive_status().equalsIgnoreCase("received") || orderTracker.getActive_status().equalsIgnoreCase("processed")) {
+                            if (itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("received") || itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("processed")) {
                                 holder.btnCancel.setVisibility(View.VISIBLE);
                             } else {
                                 holder.btnCancel.setVisibility(View.GONE);
                             }
                         } else if (orderItem.getTill_status().equalsIgnoreCase("shipped")) {
-                            if (orderTracker.getActive_status().equalsIgnoreCase("received") || orderTracker.getActive_status().equalsIgnoreCase("processed") || orderTracker.getActive_status().equalsIgnoreCase("shipped")) {
+                            if (itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("received") || itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("processed") || itemsInOrderTracker.getCategory().getActive_status().equalsIgnoreCase("shipped")) {
                                 holder.btnCancel.setVisibility(View.VISIBLE);
                             } else {
                                 holder.btnCancel.setVisibility(View.GONE);
@@ -231,8 +236,8 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
         alertDialog.setPositiveButton(activity.getResources().getString(R.string.yes), (dialog, which) -> {
             final Map<String, String> params = new HashMap<>();
             params.put(Constant.UPDATE_ORDER_ITEM_STATUS, Constant.GetVal);
-            params.put(Constant.ORDER_ITEM_ID, orderTracker.getId());
-            params.put(Constant.ORDER_ID, orderTracker.getId());
+            params.put(Constant.ORDER_ITEM_ID, String.valueOf(itemsInOrderTracker.getCategory().getId()));
+            params.put(Constant.ORDER_ID, String.valueOf(itemsInOrderTracker.getCategory().getId()));
             params.put(Constant.STATUS, status);
             if (pBar != null)
                 pBar.setVisibility(View.VISIBLE);
@@ -247,7 +252,7 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
                                 holder.tvStatus.setText(status);
                                 holder.tvStatus.setTextColor(Color.RED);
                                 if (from.equals("detail")) {
-                                    if (orderTrackerArrayList.size() == 1) {
+                                    if (itemsInOrderTrackers.size() == 1) {
                                         TrackerDetailFragment.btnCancel.setVisibility(View.GONE);
                                         TrackerDetailFragment.lytTracker.setVisibility(View.GONE);
                                     }
@@ -276,7 +281,7 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
 
     @Override
     public int getItemCount() {
-        return orderTrackerArrayList.size();
+        return itemsInOrderTrackers.size();
     }
 
     @Override

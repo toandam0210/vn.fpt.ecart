@@ -14,6 +14,7 @@ import wrteam.ecart.shop.helper.service.FlashSalesListService;
 import wrteam.ecart.shop.helper.service.OrderTrackerService;
 import wrteam.ecart.shop.helper.service.ProductService;
 import wrteam.ecart.shop.helper.service.SliderService;
+import wrteam.ecart.shop.helper.service.UserService;
 import wrteam.ecart.shop.helper.service.VariantsService;
 import wrteam.ecart.shop.model.Cart;
 import wrteam.ecart.shop.model.CartItems;
@@ -24,10 +25,11 @@ import wrteam.ecart.shop.model.OrderItem;
 import wrteam.ecart.shop.model.OrderTracker;
 import wrteam.ecart.shop.model.Product;
 import wrteam.ecart.shop.model.Slider;
+import wrteam.ecart.shop.model.User;
 import wrteam.ecart.shop.model.Variants;
 
 @Database(entities = {Category.class, Cart.class, CartItems.class, FlashSale.class, FlashSalesList.class,
-            OrderItem.class, OrderTracker.class, Product.class, Slider.class, Variants.class},  version = 1)
+            OrderItem.class, OrderTracker.class, Product.class, Slider.class, Variants.class, User.class},  version = 1)
 
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -48,6 +50,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract SliderService sliderService();
 
     public abstract VariantsService variantsService();
+    public  abstract UserService userService();
 
     private static AppDatabase INSTANCE;
 

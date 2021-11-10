@@ -11,4 +11,7 @@ import wrteam.ecart.shop.model.CartItems;
 public interface CartItemsService {
     @Query("SELECT * FROM CartItems")
     List<CartItems> getAll();
+
+    @Query("SELECT * FROM CartItems where id = :id")
+    List<CartItems> loadCartItem(int id);
 }

@@ -154,7 +154,7 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 if (isLogin) {
                     holder.tvQuantity.setText(variants.get(0).getCart_count());
 
-                    if (product.getProduct().getIs_favorite()) {
+                    if (product.getProduct().isIs_favorite()) {
                         holder.imgFav.setImageResource(R.drawable.ic_is_favorite);
                     } else {
                         holder.imgFav.setImageResource(R.drawable.ic_is_not_favorite);
@@ -163,7 +163,7 @@ public class ProductLoadMoreAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                     holder.imgFav.setOnClickListener(v -> {
                         try {
-                            isFavorite = product.getProduct().getIs_favorite();
+                            isFavorite = product.getProduct().isIs_favorite();
                             if (from.equals("favorite")) {
                                 isFavorite = false;
                                 productArrayList.remove(product);

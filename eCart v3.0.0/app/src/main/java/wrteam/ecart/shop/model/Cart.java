@@ -20,7 +20,20 @@ public class Cart implements Serializable {
     String product_variant_id;
     @ColumnInfo
     String qty;
+    @ColumnInfo
+    boolean status;
 
+    public void setProduct_variant_id(String product_variant_id) {
+        this.product_variant_id = product_variant_id;
+    }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
 
     public Integer getId() {
         return id;
