@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.fragment.ProductDetailFragment;
@@ -34,12 +35,12 @@ import wrteam.ecart.shop.model.Product;
 
 public class AdapterStyle1 extends RecyclerView.Adapter<AdapterStyle1.VideoHolder> {
 
-    public final ArrayList<Product> productList;
+    public final List<Product> productList;
     public final Activity activity;
     public final int itemResource;
     final Context context;
 
-    public AdapterStyle1(Context context, Activity activity, ArrayList<Product> productList, int itemResource) {
+    public AdapterStyle1(Context context, Activity activity, List<Product> productList, int itemResource) {
         this.context = context;
         this.activity = activity;
         this.productList = productList;

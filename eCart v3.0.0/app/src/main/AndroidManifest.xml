@@ -101,10 +101,10 @@
             tools:ignore="LockedOrientationActivity" />
         <activity
             android:name="wrteam.ecart.shop.activity.SplashActivity"
-            android:exported="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan|stateVisible"
-            tools:ignore="LockedOrientationActivity">
+            tools:ignore="LockedOrientationActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

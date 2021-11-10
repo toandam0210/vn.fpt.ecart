@@ -1,9 +1,66 @@
 package wrteam.ecart.shop.model;
 
-import java.io.Serializable;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
 
+import java.io.Serializable;
+@Entity
 public class OrderItem implements Serializable {
-    String id, user_id, order_id, product_variant_id, quantity, price, discounted_price, tax_amount, tax_percentage, discount, sub_total, deliver_by, active_status, date_added, product_id, variant_id, rate, review, name, image, manufacturer, made_in, return_status, cancelable_status, till_status, measurement, unit;
+    @PrimaryKey(autoGenerate = true)
+    Integer id;
+    @ColumnInfo
+    String user_id;
+    @ColumnInfo
+    String order_id;
+    @ColumnInfo
+    String product_variant_id;
+    @ColumnInfo
+    String quantity;
+    @ColumnInfo
+    String price;
+    @ColumnInfo
+    String discounted_price;
+    @ColumnInfo
+    String tax_amount;
+    @ColumnInfo
+    String tax_percentage;
+    @ColumnInfo
+    String discount;
+    @ColumnInfo
+    String sub_total;
+    @ColumnInfo
+    String deliver_by;
+    @ColumnInfo
+    String active_status;
+    @ColumnInfo
+    String date_added;
+    @ColumnInfo
+    String product_id;
+    @ColumnInfo
+    String variant_id;
+    @ColumnInfo
+    String rate;
+    @ColumnInfo
+    String review;
+    @ColumnInfo
+    String name;
+    @ColumnInfo
+    String image;
+    @ColumnInfo
+    String manufacturer;
+    @ColumnInfo
+    String made_in;
+    @ColumnInfo
+    String return_status;
+    @ColumnInfo
+    String cancelable_status;
+    @ColumnInfo
+    String till_status;
+    @ColumnInfo
+    String measurement;
+    @ColumnInfo
+    String unit;
 
     public void setRate(String rate) {
         this.rate = rate;
@@ -16,10 +73,12 @@ public class OrderItem implements Serializable {
     public void setReview_status(boolean review_status) {
         this.review_status = review_status;
     }
+    @ColumnInfo
+    boolean review_status;
+    @ColumnInfo
+    boolean applied_for_return;
 
-    boolean review_status, applied_for_return;
-
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 

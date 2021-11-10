@@ -1,30 +1,43 @@
 package wrteam.ecart.shop.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Embedded;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.Relation;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
+@Entity
 public class Category implements Serializable {
-    String id;
+    @PrimaryKey
+    Integer id;
+    @ColumnInfo
     String name;
+    @ColumnInfo
     String subtitle;
+    @ColumnInfo
     String image;
+    @ColumnInfo
     String slug;
+    @ColumnInfo
     String category_id;
+    @ColumnInfo
     String status;
+    @ColumnInfo
     String date;
+    @ColumnInfo
     String email;
+    @ColumnInfo
     String style;
-    ArrayList<Product> productList;
 
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -50,6 +63,18 @@ public class Category implements Serializable {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public String getCategory_id() {
+        return category_id;
     }
 
     public void setCategory_id(String category_id) {
@@ -88,11 +113,5 @@ public class Category implements Serializable {
         this.style = style;
     }
 
-    public ArrayList<Product> getProductList() {
-        return productList;
-    }
-
-    public void setProductList(ArrayList<Product> productList) {
-        this.productList = productList;
-    }
 }
+

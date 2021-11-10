@@ -76,7 +76,7 @@ public class SliderAdapter extends PagerAdapter {
 
                     Fragment fragment = new SubCategoryFragment();
                     Bundle bundle = new Bundle();
-                    bundle.putString(Constant.ID, singleItem.getType_id());
+                    bundle.putInt(Constant.ID, singleItem.getType_id());
                     bundle.putString(Constant.NAME, singleItem.getName());
                     bundle.putString(Constant.FROM, "category");
                     fragment.setArguments(bundle);
@@ -88,7 +88,7 @@ public class SliderAdapter extends PagerAdapter {
 
                     Fragment fragment = new ProductDetailFragment();
                     Bundle bundle = new Bundle();
-                    bundle.putString(Constant.ID, singleItem.getType_id());
+                    bundle.putInt(Constant.ID, singleItem.getType_id());
                     bundle.putString(Constant.FROM, "slider");
                     bundle.putInt("variantsPosition", 0);
                     fragment.setArguments(bundle);

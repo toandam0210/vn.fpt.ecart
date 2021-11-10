@@ -50,6 +50,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import wrteam.ecart.shop.R;
@@ -58,13 +59,17 @@ import wrteam.ecart.shop.adapter.AdapterStyle1;
 import wrteam.ecart.shop.adapter.ReviewAdapter;
 import wrteam.ecart.shop.adapter.SliderAdapter;
 import wrteam.ecart.shop.helper.ApiConfig;
+import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.DatabaseHelper;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.ProductService;
+import wrteam.ecart.shop.helper.service.VariantsService;
 import wrteam.ecart.shop.model.Product;
 import wrteam.ecart.shop.model.Review;
 import wrteam.ecart.shop.model.Slider;
 import wrteam.ecart.shop.model.Variants;
+import wrteam.ecart.shop.model.VariantsInProduct;
 
 public class ProductDetailFragment extends Fragment {
     static ArrayList<Slider> sliderArrayList;
@@ -107,13 +112,14 @@ public class ProductDetailFragment extends Fragment {
     TextView tvRatingProductCount, tvRatingCount, tvMoreReview, tvReviewDetail;
     LinearLayout lytProductRatings;
     RelativeLayout lytReview;
+    AppDatabase db;
 
     @SuppressLint("NotifyDataSetChanged")
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
 
         root = inflater.inflate(R.layout.fragment_product_detail, container, false);
-
+        db = AppDatabase.getDbInstance(activity.getApplicationContext());
         setHasOptionsMenu(true);
         activity = getActivity();
 
@@ -235,6 +241,9 @@ public class ProductDetailFragment extends Fragment {
             Intent shareIntent = Intent.createChooser(sendIntent, getString(R.string.share_via));
             startActivity(shareIntent);
         });
+        VariantsService variantsService = db.variantsService();
+        List<Variants> variants =variantsService.loadVariants(product.getId());
+        VariantsInProduct variantsInProduct = new VariantsInProduct(product, variants);
 
         lytSave.setOnClickListener(view -> {
             if (isLogin) {
@@ -251,7 +260,7 @@ public class ProductDetailFragment extends Fragment {
                         lottieAnimationView.setVisibility(View.VISIBLE);
                         lottieAnimationView.playAnimation();
                     }
-                    AddOrRemoveFavorite(activity, session, product.getVariants().get(0).getProduct_id(), isFavorite);
+                    AddOrRemoveFavorite(activity, session, variantsInProduct.getProduct().getId(), isFavorite);
                 }
             } else {
                 isFavorite = databaseHelper.getFavoriteById(product.getId());
@@ -264,7 +273,7 @@ public class ProductDetailFragment extends Fragment {
                     lottieAnimationView.setVisibility(View.VISIBLE);
                     lottieAnimationView.playAnimation();
                 }
-                databaseHelper.AddOrRemoveFavorite(product.getVariants().get(0).getProduct_id(), isFavorite);
+                databaseHelper.AddOrRemoveFavorite(variantsInProduct.getProduct().getId(), isFavorite);
             }
             switch (from) {
                 case "fragment":
@@ -291,7 +300,7 @@ public class ProductDetailFragment extends Fragment {
     public void ShowSimilar() {
         Fragment fragment = new ProductListFragment();
         Bundle bundle = new Bundle();
-        bundle.putString("id", product.getId());
+        bundle.putInt("id", product.getId());
         bundle.putString("cat_id", product.getCategory_id());
         bundle.putString(Constant.FROM, "similar");
         bundle.putString("name", "Similar Products");
@@ -300,40 +309,14 @@ public class ProductDetailFragment extends Fragment {
     }
 
 
-    void GetSimilarData(Product product) {
-        ArrayList<Product> productArrayList = new ArrayList<>();
-        Map<String, String> params = new HashMap<>();
-        params.put(Constant.GET_SIMILAR_PRODUCT, Constant.GetVal);
-        params.put(Constant.PRODUCT_ID, product.getId());
-        params.put(Constant.CATEGORY_ID, product.getCategory_id());
-        params.put(Constant.USER_ID, session.getData(Constant.ID));
-        params.put(Constant.LIMIT, "" + Constant.LOAD_ITEM_LIMIT);
+    void GetSimilarData(int categoryId) {
+        List<Product> productArrayList = new ArrayList<>();
+        ProductService foodService = db.productService();
+        productArrayList = foodService.loadProduct(categoryId);
 
-        ApiConfig.RequestToVolley((result, response) -> {
-            if (result) {
-                try {
-                    JSONObject jsonObject1 = new JSONObject(response);
-                    if (!jsonObject1.getBoolean(Constant.ERROR)) {
-                        JSONArray jsonArray = jsonObject1.getJSONArray(Constant.DATA);
-                        try {
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                Product product1 = new Gson().fromJson(jsonArray.getJSONObject(i).toString(), Product.class);
-                                productArrayList.add(product1);
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        AdapterStyle1 adapter = new AdapterStyle1(activity, activity, productArrayList, R.layout.offer_layout);
-                        recyclerView.setAdapter(adapter);
-                        relativeLayout.setVisibility(View.VISIBLE);
-                    } else {
-                        relativeLayout.setVisibility(View.GONE);
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }, activity, Constant.GET_SIMILAR_PRODUCT_URL, params, false);
+        AdapterStyle1 adapter = new AdapterStyle1(activity, activity, productArrayList, R.layout.offer_layout);
+        recyclerView.setAdapter(adapter);
+        relativeLayout.setVisibility(View.VISIBLE);
     }
 
     public void NotifyData(int count) {

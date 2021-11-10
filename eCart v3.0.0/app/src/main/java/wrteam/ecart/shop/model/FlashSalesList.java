@@ -1,15 +1,23 @@
 package wrteam.ecart.shop.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
+@Entity
 public class FlashSalesList {
-    String id;
+    @PrimaryKey(autoGenerate = true)
+    Integer id;
+    @ColumnInfo
     String title;
+    @ColumnInfo
     String status;
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
