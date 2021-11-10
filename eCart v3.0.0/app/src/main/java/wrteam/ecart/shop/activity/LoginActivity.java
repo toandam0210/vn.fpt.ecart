@@ -369,19 +369,6 @@ public class LoginActivity extends AppCompatActivity {
             UserService userService = db.userService();
             User user = userService.login(username,password);
 
-//            ApiConfig.AddMultipleProductInCart(session, activity, databaseHelper.getCartData());
-//            ApiConfig.AddMultipleProductInSaveForLater(session, activity, databaseHelper.getSaveForLaterData());
-//            ApiConfig.getCartItemCount(activity, session);
-
-//            ArrayList<String> favorites = databaseHelper.getFavorite();
-//            for (int i = 0; i < favorites.size(); i++) {
-//                ApiConfig.AddOrRemoveFavorite(activity, session, Integer.valueOf(favorites.get(i)), true);
-//            }
-
-//            databaseHelper.DeleteAllFavoriteData();
-//            databaseHelper.ClearCart();
-//            databaseHelper.ClearSaveForLater();
-
             session.setData(Constant.USER_ID, String.valueOf(user.getUserId()));
 
             MainActivity.homeClicked = false;

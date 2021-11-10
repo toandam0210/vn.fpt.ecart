@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wrteam.ecart.shop.R;
+import wrteam.ecart.shop.activity.MainActivity;
 import wrteam.ecart.shop.adapter.FlashSaleAdapter;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.model.Product;
@@ -34,7 +35,6 @@ public class FlashSaleFragment extends Fragment {
     RecyclerView recyclerView;
     Activity activity;
     ArrayList<Product> productArrayList;
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -50,6 +50,7 @@ public class FlashSaleFragment extends Fragment {
             JSONArray jsonArray = jsonObject.getJSONArray(Constant.PRODUCTS);
             for (int i = 0; i < jsonArray.length(); i++) {
                 Product product = new Gson().fromJson(jsonArray.get(i).toString(), Product.class);
+                MainActivity.WriteToFile("ProductSearch.txt", product.toString());
                 productArrayList.add(product);
             }
 
