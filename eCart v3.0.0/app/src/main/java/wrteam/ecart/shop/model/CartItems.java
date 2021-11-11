@@ -36,6 +36,16 @@ public class CartItems implements Serializable {
     String tax_percentage;
     @ColumnInfo
     String tax_title;
+    @ColumnInfo
+    int cart_id;
+
+    public int getCart_id() {
+        return cart_id;
+    }
+
+    public void setCart_id(int cart_id) {
+        this.cart_id = cart_id;
+    }
 
     public int getId() {
         return id;

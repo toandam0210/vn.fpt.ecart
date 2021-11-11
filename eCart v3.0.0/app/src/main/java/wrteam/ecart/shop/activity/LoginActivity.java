@@ -370,6 +370,10 @@ public class LoginActivity extends AppCompatActivity {
             User user = userService.login(username,password);
 
             session.setData(Constant.USER_ID, String.valueOf(user.getUserId()));
+            session.setData(Constant.NAME, user.getFullname());
+            session.setData(Constant.USER_NAME, user.getUsername());
+            session.setBoolean(Constant.IS_USER_LOGIN, true);
+            session.setBoolean(Constant.IS_ADD_CART, false);
 
             MainActivity.homeClicked = false;
             MainActivity.categoryClicked = false;

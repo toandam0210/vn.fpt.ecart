@@ -8,8 +8,8 @@ import wrteam.ecart.shop.model.User;
 
 @Dao
 public interface UserService {
-    @Query("select * from User where username = :username and password = :password")
-    public User login(String username, String password);
+    @Query("select * from User where phoneNumber = :phoneNumber and password = :password")
+    public User login(String phoneNumber, String password);
 
     @Insert
     void insertAll(User user);

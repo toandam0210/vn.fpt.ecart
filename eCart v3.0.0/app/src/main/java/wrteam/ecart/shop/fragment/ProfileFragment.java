@@ -10,6 +10,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -106,14 +107,14 @@ public class ProfileFragment extends Fragment {
 
         imgProfile = root.findViewById(R.id.imgProfile);
 
-        Picasso.get()
-                .load(session.getData(Constant.PROFILE))
-                .fit()
-                .centerInside()
-                .placeholder(R.drawable.ic_profile_placeholder)
-                .error(R.drawable.ic_profile_placeholder)
-                .transform(new RoundedCornersTransformation(20, 0))
-                .into(imgProfile);
+        File imgFile = new  File(session.getData(Constant.PROFILE));
+        if(imgFile.exists()){
+
+            Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+            imgProfile.setImageBitmap(myBitmap);
+
+        }
 
         fabProfile.setOnClickListener(view -> SelectProfileImage());
 
@@ -427,23 +428,23 @@ public class ProfileFragment extends Fragment {
             Toast.makeText(activity, jsonObject.getString(Constant.MESSAGE), Toast.LENGTH_SHORT).show();
             if (!jsonObject.getBoolean(Constant.ERROR)) {
                 session.setData(Constant.PROFILE, jsonObject.getString(Constant.PROFILE));
-                Picasso.get()
-                        .load(session.getData(Constant.PROFILE))
-                        .fit()
-                        .centerInside()
-                        .placeholder(R.drawable.placeholder)
-                        .error(R.drawable.placeholder)
-                        .transform(new RoundedCornersTransformation(20, 0))
-                        .into(imgProfile);
+                File imgFile = new  File(session.getData(Constant.PROFILE));
+                if(imgFile.exists()){
 
-                Picasso.get()
-                        .load(session.getData(Constant.PROFILE))
-                        .fit()
-                        .centerInside()
-                        .placeholder(R.drawable.placeholder)
-                        .error(R.drawable.placeholder)
-                        .transform(new RoundedCornersTransformation(20, 0))
-                        .into(DrawerFragment.imgProfile);
+                    Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                    imgProfile.setImageBitmap(myBitmap);
+
+                }
+
+                imgFile = new  File(session.getData(Constant.PROFILE));
+                if(imgFile.exists()){
+
+                    Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                    imgProfile.setImageBitmap(myBitmap);
+
+                }
             }
             Toast.makeText(activity, jsonObject.getString(Constant.MESSAGE), Toast.LENGTH_SHORT).show();
 

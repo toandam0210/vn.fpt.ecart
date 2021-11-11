@@ -46,6 +46,7 @@ public class Constant {
 
     //**********APIS**********
     public static final String FAQ_URL = BaseUrl + "get-faqs.php";
+    public static final String IS_ADD_CART = "is_add_cart";
     public static final String CategoryUrl = BaseUrl + "get-categories.php";
     public static final String Get_RazorPay_OrderId = BaseUrl + "create-razorpay-order.php";
     public static final String SubcategoryUrl = BaseUrl + "get-subcategories-by-category-id.php";

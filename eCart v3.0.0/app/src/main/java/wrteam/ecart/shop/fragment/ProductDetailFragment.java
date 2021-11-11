@@ -57,8 +57,10 @@ import wrteam.ecart.shop.helper.AppDatabase;
 import wrteam.ecart.shop.helper.Constant;
 import wrteam.ecart.shop.helper.DatabaseHelper;
 import wrteam.ecart.shop.helper.Session;
+import wrteam.ecart.shop.helper.service.CartService;
 import wrteam.ecart.shop.helper.service.ProductService;
 import wrteam.ecart.shop.helper.service.VariantsService;
+import wrteam.ecart.shop.model.Cart;
 import wrteam.ecart.shop.model.Product;
 import wrteam.ecart.shop.model.Review;
 import wrteam.ecart.shop.model.Variants;
@@ -83,7 +85,8 @@ public class ProductDetailFragment extends Fragment {
     int count;
     View root;
     int variantPosition;
-    String from, id;
+    String from;
+    int id;
     boolean isLogin;
     Product product;
     DatabaseHelper databaseHelper;
@@ -112,9 +115,10 @@ public class ProductDetailFragment extends Fragment {
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
 
         root = inflater.inflate(R.layout.fragment_product_detail, container, false);
+        activity = getActivity();
         db = AppDatabase.getDbInstance(activity.getApplicationContext());
         setHasOptionsMenu(true);
-        activity = getActivity();
+
 
         Constant.CartValues = new HashMap<>();
 
@@ -129,7 +133,7 @@ public class ProductDetailFragment extends Fragment {
         taxPercentage = "0";
 
         variantPosition = getArguments().getInt("variantPosition", 0);
-        id = getArguments().getString("id");
+        id = getArguments().getInt("id");
 
         if (from.equals("favorite") || from.equals("fragment") || from.equals("sub_cate") || from.equals("product") || from.equals("search") || from.equals("flash_sale")) {
             position = getArguments().getInt("position");
@@ -204,7 +208,7 @@ public class ProductDetailFragment extends Fragment {
             lytReview.setVisibility(View.GONE);
         }
 
-        GetProductDetail(Integer.valueOf(id));
+        GetProductDetail(id);
         GetSettings(activity);
 
         lytMainPrice.setOnClickListener(view -> spinner.performClick());
@@ -234,9 +238,11 @@ public class ProductDetailFragment extends Fragment {
             Intent shareIntent = Intent.createChooser(sendIntent, getString(R.string.share_via));
             startActivity(shareIntent);
         });
+        ProductService productService = db.productService();
+        product = productService.loadProductDetail(id);
         VariantsService variantsService = db.variantsService();
-        List<Variants> variants = variantsService.loadVariants(product.getId());
-        VariantsInProduct variantsInProduct = new VariantsInProduct(product, variants);
+        List<Variants> variant = variantsService.loadVariants(product.getId());
+        VariantsInProduct variantsInProduct = new VariantsInProduct(product, variant);
 
         lytSave.setOnClickListener(view -> {
             if (isLogin) {
@@ -346,15 +352,15 @@ public class ProductDetailFragment extends Fragment {
         }
     }
 
-    void GetProductDetail(final Integer productId) {
+    void GetProductDetail(final int productId) {
         scrollView.setVisibility(View.GONE);
         mShimmerViewContainer.setVisibility(View.VISIBLE);
         mShimmerViewContainer.startShimmer();
         Map<String, String> params = new HashMap<>();
         if (from.equals("share")) {
-            params.put(Constant.SLUG, productId.toString());
+            params.put(Constant.SLUG, String.valueOf(productId));
         } else {
-            params.put(Constant.PRODUCT_ID, productId.toString());
+            params.put(Constant.PRODUCT_ID, String.valueOf(productId));
         }
         if (isLogin) {
             params.put(Constant.USER_ID, session.getData(Constant.ID));
@@ -383,7 +389,7 @@ public class ProductDetailFragment extends Fragment {
         }, activity, Constant.GET_PRODUCT_DETAIL_URL, params, false);
     }
 
-    void GetReviews(final String productId) {
+    void GetReviews(final int productId) {
         reviewArrayList = new ArrayList<>();
         scrollView.setVisibility(View.GONE);
         mShimmerViewContainer.setVisibility(View.VISIBLE);
@@ -393,9 +399,9 @@ public class ProductDetailFragment extends Fragment {
         params.put(Constant.LIMIT, "5");
         params.put(Constant.OFFSET, "0");
         if (from.equals("share")) {
-            params.put(Constant.SLUG, productId);
+            params.put(Constant.SLUG, String.valueOf(productId));
         } else {
-            params.put(Constant.PRODUCT_ID, productId);
+            params.put(Constant.PRODUCT_ID, String.valueOf(productId));
         }
 
         ApiConfig.RequestToVolley((result, response) -> {
@@ -432,7 +438,8 @@ public class ProductDetailFragment extends Fragment {
         try {
 
             Variants variants = product.getVariants().get(variantPosition);
-
+            String price = String.valueOf(variants.getPrice());
+            tvPrice.setText(price);
             tvProductName.setText(product.getProduct().getName());
             try {
                 taxPercentage = (Double.parseDouble(product.getProduct().getTax_percentage()) > 0 ? product.getProduct().getTax_percentage() : "0");
@@ -678,6 +685,7 @@ public class ProductDetailFragment extends Fragment {
         });
 
         btnAddToCart.setOnClickListener(v -> {
+            session.setBoolean(Constant.IS_ADD_CART, true);
             if (ApiConfig.isConnected(activity)) {
                 count = 0;
                 if (!(count >= Float.parseFloat(variant.get(variantPosition).getStock()))) {
@@ -689,6 +697,20 @@ public class ProductDetailFragment extends Fragment {
                             if (Constant.CartValues.containsKey(variant.get(variantPosition).getId())) {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                     Constant.CartValues.replace(variant.get(variantPosition).getId().toString(), "" + count);
+                                    CartService cartService = db.cartService();
+                                    Cart cart = new Cart();
+                                    if(session.getBoolean(Constant.IS_ADD_CART)){
+                                        cart.setProduct_id(String.valueOf(product.getId()));
+                                        cart.setProduct_variant_id(String.valueOf(variants.getId()));
+                                        cart.setQty(String.valueOf(count));
+                                        cart.setUser_id(session.getData(Constant.USER_ID));
+                                        cart.setStatus(false);
+                                        cartService.insertAll(cart);
+                                    }else{
+                                        cart = cartService.loadCartById(Integer.valueOf(session.getData(Constant.USER_ID)));
+                                        cart.setQty(String.valueOf(count));
+                                        cartService.updateAll(cart);
+                                    }
                                 } else {
                                     Constant.CartValues.remove(variant.get(variantPosition).getId());
                                     Constant.CartValues.put(variant.get(variantPosition).getId().toString(), "" + count);

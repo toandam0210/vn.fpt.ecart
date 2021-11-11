@@ -62,7 +62,7 @@ public class CheckoutItemListAdapter extends RecyclerView.Adapter<CheckoutItemLi
             db = AppDatabase.getDbInstance(activity.getApplicationContext());
             CartService cartService = db.cartService();
             CartItemsService cartItemsService = db.cartItemsService();
-            Cart carts = cartService.loadCartById(Integer.valueOf(session.getData(Constant.USER_ID)), false);
+            Cart carts = cartService.loadCartById(Integer.valueOf(session.getData(Constant.USER_ID)));
             List<CartItems> orderItems = cartItemsService.loadCartItem(cart.getId());
 
             float price;

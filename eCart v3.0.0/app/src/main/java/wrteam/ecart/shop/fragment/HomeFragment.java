@@ -331,6 +331,7 @@ public class HomeFragment extends Fragment {
                 section.setId(category.getId());
                 section.setStyle(category.getStyle());
                 section.setSubtitle(category.getSubtitle());
+                section.setCategory_id(category.getCategory_id());
                 ProductInCategory productInCategory = new ProductInCategory(section, productList);
                 //section.setProductList(ApiConfig.GetProductList(db));
                 sectionList.add(productInCategory);

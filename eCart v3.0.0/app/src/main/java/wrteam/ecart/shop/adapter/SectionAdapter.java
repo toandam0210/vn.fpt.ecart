@@ -51,17 +51,17 @@ public class SectionAdapter extends RecyclerView.Adapter<SectionAdapter.SectionH
         holder1.tvSubTitle.setText(section.getCategory().getSubtitle());
 
         switch (section.getCategory().getStyle()) {
-            case "style_1":
+            case "1":
                 holder1.recyclerView.setLayoutManager(new LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false));
                 AdapterStyle1 adapter = new AdapterStyle1(context, activity, section.getProductList(), R.layout.offer_layout);
                 holder1.recyclerView.setAdapter(adapter);
                 break;
-            case "style_2":
+            case "2":
                 holder1.recyclerView.setLayoutManager(new LinearLayoutManager(activity));
                 AdapterStyle2 adapterStyle2 = new AdapterStyle2(context, activity, section.getProductList());
                 holder1.recyclerView.setAdapter(adapterStyle2);
                 break;
-            case "style_3":
+            case "3":
                 holder1.recyclerView.setLayoutManager(new GridLayoutManager(activity, 2));
                 AdapterStyle1 adapter3 = new AdapterStyle1(context, activity, section.getProductList(), R.layout.lyt_style_3);
                 holder1.recyclerView.setAdapter(adapter3);
@@ -74,7 +74,7 @@ public class SectionAdapter extends RecyclerView.Adapter<SectionAdapter.SectionH
             Bundle bundle = new Bundle();
             bundle.putString(Constant.FROM, "section");
             bundle.putString(Constant.NAME, section.getCategory().getName());
-            bundle.putInt(Constant.ID, section.getCategory().getId());
+            bundle.putString(Constant.ID, section.getCategory().getCategory_id());
             fragment.setArguments(bundle);
 
             MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();

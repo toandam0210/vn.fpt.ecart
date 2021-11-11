@@ -1,6 +1,8 @@
 package wrteam.ecart.shop.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import wrteam.ecart.shop.R;
@@ -49,12 +52,14 @@ public class SubCategoryAdapter extends RecyclerView.Adapter<SubCategoryAdapter.
         final Category model = categoryList.get(position);
         holder.tvTitle.setText(model.getName());
 
-        Picasso.get()
-                .load(model.getImage())
-                .fit()
-                .placeholder(R.drawable.placeholder)
-                .centerInside()
-                .into(holder.imgCategory);
+        File imgFile = new  File(model.getImage());
+        if(imgFile.exists()){
+
+            Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+            holder.imgCategory.setImageBitmap(myBitmap);
+
+        }
 
         holder.lytMain.setOnClickListener(v -> {
             AppCompatActivity activity1 = (AppCompatActivity) context;

@@ -4,6 +4,8 @@ import static wrteam.ecart.shop.fragment.TrackerDetailFragment.pBar;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -31,6 +33,7 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -109,13 +112,14 @@ public class ItemsAdapter extends RecyclerView.Adapter<ItemsAdapter.ViewHolder> 
             holder.tvStatusDate.setText(itemsInOrderTracker.getCategory().getDate_added());
             holder.tvName.setText(orderItem.getName() + "(" + orderItem.getMeasurement() + orderItem.getUnit() + ")");
 
-            Picasso.get().
-                    load(orderItem.getImage())
-                    .fit()
-                    .centerInside()
-                    .placeholder(R.drawable.placeholder)
-                    .error(R.drawable.placeholder)
-                    .into(holder.imgOrder);
+            File imgFile = new  File(orderItem.getImage());
+            if(imgFile.exists()){
+
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                holder.imgOrder.setImageBitmap(myBitmap);
+
+            }
 
             holder.tvCardDetail.setOnClickListener(v -> {
                 Fragment fragment = new TrackerDetailFragment();

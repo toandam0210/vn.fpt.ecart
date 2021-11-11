@@ -14,5 +14,5 @@ public interface CategoryService {
     List<Category> getAll();
 
     @Query("SELECT * FROM Category WHERE category_id = :cate_id")
-    List<Category> getCategoryById(Integer cate_id);
+    List<Category> getCategoryById(String cate_id);
 }

@@ -1,6 +1,8 @@
 package wrteam.ecart.shop.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,18 +55,19 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
         final Category model = categoryList.get(position);
         holder.tvTitle.setText(model.getName());
 
-        Picasso.get()
-                .load(model.getImage())
-                .fit()
-                .centerInside()
-                .placeholder(R.drawable.placeholder)
-                .error(R.drawable.placeholder)
-                .into(holder.imgCategory);
+        File imgFile = new  File(model.getImage());
+        if(imgFile.exists()){
+
+            Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+            holder.imgCategory.setImageBitmap(myBitmap);
+
+        }
 
         holder.lytMain.setOnClickListener(v -> {
             Fragment fragment = new SubCategoryFragment();
             Bundle bundle = new Bundle();
-            bundle.putInt(Constant.ID, model.getId());
+            bundle.putString(Constant.ID, model.getCategory_id());
             bundle.putString(Constant.NAME, model.getName());
             bundle.putString(Constant.FROM, "category");
             fragment.setArguments(bundle);

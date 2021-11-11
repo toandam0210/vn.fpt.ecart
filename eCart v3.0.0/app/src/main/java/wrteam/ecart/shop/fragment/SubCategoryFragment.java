@@ -103,14 +103,14 @@ public class SubCategoryFragment extends Fragment {
 
         if (ApiConfig.isConnected(activity)) {
             GetSettings(activity);
-            GetCategory(Integer.valueOf(id));
+            GetCategory(id);
             GetProducts(Integer.valueOf(id));
         }
 
         swipeLayout.setColorSchemeResources(R.color.colorPrimary);
         swipeLayout.setOnRefreshListener(() -> {
             swipeLayout.setRefreshing(false);
-            GetCategory(Integer.valueOf(id));
+            GetCategory(id);
             GetProducts(Integer.valueOf(id));
         });
 
@@ -141,7 +141,7 @@ public class SubCategoryFragment extends Fragment {
         mShimmerViewContainer.startShimmer();
     }
 
-    void GetCategory(Integer id) {
+    void GetCategory(String id) {
         startShimmer();
         Map<String, String> params = new HashMap<>();
         params.put(Constant.CATEGORY_ID, id.toString());
@@ -272,7 +272,7 @@ public class SubCategoryFragment extends Fragment {
                             break;
                     }
                     if (item1 != -1) {
-                        GetCategory(Integer.valueOf(id));
+                        GetCategory(id);
                         GetProducts(Integer.valueOf(id));
                         dialog.dismiss();
                     }

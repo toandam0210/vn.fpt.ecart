@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -26,6 +28,7 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,14 +93,14 @@ public class DrawerFragment extends Fragment {
             tvMobile.setText(session.getData(Constant.MOBILE));
             tvWallet.setVisibility(View.VISIBLE);
             imgEditProfile.setVisibility(View.VISIBLE);
-            Picasso.get()
-                    .load(session.getData(Constant.PROFILE))
-                    .fit()
-                    .centerInside()
-                    .placeholder(R.drawable.ic_profile_placeholder)
-                    .error(R.drawable.ic_profile_placeholder)
-                    .transform(new RoundedCornersTransformation(20, 0))
-                    .into(imgProfile);
+            File imgFile = new  File(session.getData(Constant.PROFILE));
+            if(imgFile.exists()){
+
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                imgProfile.setImageBitmap(myBitmap);
+
+            }
 
             tvWallet.setText(activity.getResources().getString(R.string.wallet_balance) + "\t:\t" + session.getData(Constant.currency) + Constant.WALLET_BALANCE);
 
@@ -106,14 +109,14 @@ public class DrawerFragment extends Fragment {
             imgEditProfile.setVisibility(View.GONE);
             tvName.setText(getResources().getString(R.string.is_login));
             tvMobile.setText(getResources().getString(R.string.is_mobile));
-            Picasso.get()
-                    .load("-")
-                    .fit()
-                    .centerInside()
-                    .placeholder(R.drawable.logo_login)
-                    .error(R.drawable.logo_login)
-                    .transform(new RoundedCornersTransformation(20, 0))
-                    .into(imgProfile);
+            File imgFile = new  File("-");
+            if(imgFile.exists()){
+
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                imgProfile.setImageBitmap(myBitmap);
+
+            }
         }
 
         imgEditProfile.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new ProfileFragment()).addToBackStack(null).commit());
@@ -149,13 +152,13 @@ public class DrawerFragment extends Fragment {
             startActivity(intent);
         });
 
-//        tvMenuCart.setOnClickListener(v -> {
-//            fragment = new CartFragment();
-//            bundle = new Bundle();
-//            bundle.putString(Constant.FROM, "mainActivity");
-//            fragment.setArguments(bundle);
-//            MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
-//        });
+        tvMenuCart.setOnClickListener(v -> {
+            fragment = new CartFragment();
+            bundle = new Bundle();
+            bundle.putString(Constant.FROM, "mainActivity");
+            fragment.setArguments(bundle);
+            MainActivity.fm.beginTransaction().add(R.id.container, fragment).addToBackStack(null).commit();
+        });
 
        // tvMenuNotification.setOnClickListener(v -> MainActivity.fm.beginTransaction().add(R.id.container, new NotificationFragment()).addToBackStack(null).commit());
 

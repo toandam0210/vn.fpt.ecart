@@ -1,6 +1,8 @@
 package wrteam.ecart.shop.adapter;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
@@ -15,12 +17,14 @@ import androidx.viewpager.widget.PagerAdapter;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import wrteam.ecart.shop.R;
 import wrteam.ecart.shop.activity.MainActivity;
 import wrteam.ecart.shop.fragment.FullScreenViewFragment;
+import wrteam.ecart.shop.fragment.HomeFragment;
 import wrteam.ecart.shop.fragment.ProductDetailFragment;
 import wrteam.ecart.shop.fragment.SubCategoryFragment;
 import wrteam.ecart.shop.helper.Constant;
@@ -52,13 +56,14 @@ public class SliderAdapter extends PagerAdapter {
         final String singleItem = dataList.get(position);
 
 
-        Picasso.get()
-                .load(singleItem)
-                .fit()
-                .centerInside()
-                .placeholder(R.drawable.placeholder)
-                .error(R.drawable.placeholder)
-                .into(imgSlider);
+        File imgFile = new  File(singleItem);
+        if(imgFile.exists()){
+
+            Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+            imgSlider.setImageBitmap(myBitmap);
+
+        }
         view.addView(imageLayout, 0);
 
         lytMain.setOnClickListener(v -> {

@@ -2,6 +2,8 @@ package wrteam.ecart.shop.adapter;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -19,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -94,13 +97,14 @@ public class FlashSaleAdapter extends RecyclerView.Adapter<FlashSaleAdapter.Hold
                 }
             }
 
-            Picasso.get()
-                    .load(product.getImage())
-                    .fit()
-                    .centerInside()
-                    .placeholder(R.drawable.placeholder)
-                    .error(R.drawable.placeholder)
-                    .into(holder.imgThumb);
+            File imgFile = new  File(product.getImage());
+            if(imgFile.exists()){
+
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                holder.imgThumb.setImageBitmap(myBitmap);
+
+            }
 
             holder.setIsRecyclable(false);
             holder.productName.setText(product.getName());

@@ -1,5 +1,7 @@
 package wrteam.ecart.shop.adapter;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import wrteam.ecart.shop.R;
@@ -35,13 +38,14 @@ public class OfferAdapter extends RecyclerView.Adapter<OfferAdapter.ViewHolder> 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
         if (!offerList.get(position).equals("")) {
-            Picasso.get()
-                    .load(offerList.get(position))
-                    .fit()
-                    .centerInside()
-                    .placeholder(R.drawable.offer_placeholder)
-                    .error(R.drawable.offer_placeholder)
-                    .into(holder.offerImage);
+            File imgFile = new  File(offerList.get(position));
+            if(imgFile.exists()){
+
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                holder.offerImage.setImageBitmap(myBitmap);
+
+            }
             holder.lytOfferImage.setVisibility(View.VISIBLE);
         }
 

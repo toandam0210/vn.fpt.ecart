@@ -3,6 +3,8 @@ package wrteam.ecart.shop.adapter;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -17,8 +19,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,9 +35,6 @@ import wrteam.ecart.shop.model.Product;
 import wrteam.ecart.shop.model.Variants;
 import wrteam.ecart.shop.model.VariantsInProduct;
 
-/**
- * Created by shree1 on 3/16/2017.
- */
 
 public class AdapterStyle1 extends RecyclerView.Adapter<AdapterStyle1.VideoHolder> {
 
@@ -68,13 +67,14 @@ public class AdapterStyle1 extends RecyclerView.Adapter<AdapterStyle1.VideoHolde
         VariantsInProduct variant = new VariantsInProduct(product, variants);
         try {
 
-            Picasso.get()
-                    .load(product.getImage())
-                    .fit()
-                    .centerInside()
-                    .placeholder(R.drawable.placeholder)
-                    .error(R.drawable.placeholder)
-                    .into(holder.thumbnail);
+            File imgFile = new  File(product.getImage());
+            if(imgFile.exists()){
+
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                holder.thumbnail.setImageBitmap(myBitmap);
+
+            }
 
 
             double price, oPrice;
@@ -108,7 +108,7 @@ public class AdapterStyle1 extends RecyclerView.Adapter<AdapterStyle1.VideoHolde
             AppCompatActivity activity1 = (AppCompatActivity) context;
             Fragment fragment = new ProductDetailFragment();
             Bundle bundle = new Bundle();
-            bundle.putString(Constant.ID, variants.get(0).getProduct_id());
+            bundle.putInt(Constant.ID, Integer.parseInt(variants.get(0).getProduct_id()));
             bundle.putString(Constant.FROM, "section");
             bundle.putInt("variantPosition", 0);
             fragment.setArguments(bundle);

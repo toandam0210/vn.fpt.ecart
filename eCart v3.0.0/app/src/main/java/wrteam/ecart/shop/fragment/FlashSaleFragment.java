@@ -50,7 +50,6 @@ public class FlashSaleFragment extends Fragment {
             JSONArray jsonArray = jsonObject.getJSONArray(Constant.PRODUCTS);
             for (int i = 0; i < jsonArray.length(); i++) {
                 Product product = new Gson().fromJson(jsonArray.get(i).toString(), Product.class);
-                MainActivity.WriteToFile("ProductSearch.txt", product.toString());
                 productArrayList.add(product);
             }
 

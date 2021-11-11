@@ -3,6 +3,8 @@ package wrteam.ecart.shop.adapter;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -19,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,13 +95,14 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                 holder.tvSubStyle2_1.setText(new Session(activity).getData(Constant.currency) + ApiConfig.StringFormat("" + price));
 
 
-                Picasso.get()
-                        .load(productList.get(0).getImage())
-                        .fit()
-                        .centerInside()
-                        .placeholder(R.drawable.placeholder)
-                        .error(R.drawable.placeholder)
-                        .into(holder.imgStyle2_1);
+                File imgFile = new  File(productList.get(0).getImage());
+                if(imgFile.exists()){
+
+                    Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                    holder.imgStyle2_1.setImageBitmap(myBitmap);
+
+                }
 
                 holder.layoutStyle2_1.setOnClickListener(view -> {
                     AppCompatActivity activity1 = (AppCompatActivity) context;
@@ -139,13 +143,14 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                 holder.tvSubStyle2_2.setText(new Session(activity).getData(Constant.currency) + ApiConfig.StringFormat("" + price));
 
 
-                Picasso.get()
-                        .load(productList.get(1).getImage())
-                        .fit()
-                        .centerInside()
-                        .placeholder(R.drawable.placeholder)
-                        .error(R.drawable.placeholder)
-                        .into(holder.imgStyle2_2);
+                File imgFile = new  File(productList.get(1).getImage());
+                if(imgFile.exists()){
+
+                    Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                    holder.imgStyle2_2.setImageBitmap(myBitmap);
+
+                }
 
                 holder.layoutStyle2_2.setOnClickListener(view -> {
                     AppCompatActivity activity1 = (AppCompatActivity) context;
@@ -187,13 +192,14 @@ public class AdapterStyle2 extends RecyclerView.Adapter<AdapterStyle2.VideoHolde
                 holder.tvSubStyle2_3.setText(new Session(activity).getData(Constant.currency) + ApiConfig.StringFormat("" + price));
 
 
-                Picasso.get()
-                        .load(productList.get(2).getImage())
-                        .fit()
-                        .centerInside()
-                        .placeholder(R.drawable.placeholder)
-                        .error(R.drawable.placeholder)
-                        .into(holder.imgStyle2_3);
+                File imgFile = new  File(productList.get(2).getImage());
+                if(imgFile.exists()){
+
+                    Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+                    holder.imgStyle2_3.setImageBitmap(myBitmap);
+
+                }
 
                 holder.layoutStyle2_3.setOnClickListener(view -> {
                     AppCompatActivity activity1 = (AppCompatActivity) context;
